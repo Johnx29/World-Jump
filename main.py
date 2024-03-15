@@ -1,41 +1,72 @@
 # Platformer game made in PyGame by Johnny Huang (340893478) 
+
+# Import other modules or scripts
 import pygame
+# import Spritesheet
 
 # PyGame setup
 pygame.init()
-width = 800
-height = 600
-screen = pygame.display.set_mode((width, height))
+screen_width = 800
+screen_height = 600
+screen = pygame.display.set_mode((screen_width, screen_height))
 clock = pygame.time.Clock()
 running = True
 
+# Change caption text and change default icon to custom icon
 caption = "Platformer Game"
-icon = pygame.image.load("assets/walk1.png")
-
+icon = pygame.image.load("assets/idle.png")
 pygame.display.set_caption(caption)
 pygame.display.set_icon(icon)
 
-player_sprite = pygame.image.load("assets/walk1.png").convert_alpha()
+# Get our background
+background = pygame.image.load("assets/foreground.png").convert_alpha()
+
+# Get our player sprite
+player_sprite = pygame.image.load("assets/idle.png").convert_alpha()
 player_rect = player_sprite.get_rect()
 
+
 # Configurations
-step = 4
+step = 5
 gravity = 2
 
 jumped = False
 
 def create_platform(color, width, height, sizeX, sizeY):
+    '''Used for debugging purposes when I have no assets
+
+    Arguments: 
+        Color : Color value
+        width : int
+        height : int
+        sizeX : int
+        sizeY : int
+
+    Returns:
+        the platform which is a rect
+    '''
     platform = pygame.draw.rect(screen, color, (width, height, sizeX, sizeY))
     return platform
 
-def create_ground(width, height, sizeX, sizeY):
-    print("Ground")
-    image = pygame.image.load("assets/ground.png").convert_alpha()
-    image = pygame.transform.scale(image, (sizeX, sizeY))
-    platform = image.get_rect()
-    screen.blit(image, (width, height))
-    return platform
+def create_ground(sizeX, sizeY):
+    '''Easy method to create the ground
 
+    Arguments:
+        sizeX : Integer
+        sizeY : Integer
+
+    Returns:
+        The image which is surface and ground that is rect
+    '''
+    print("Ground")
+    image = pygame.image.load("assets/ground.jpg").convert_alpha()
+    image = pygame.transform.scale(image, (sizeX, sizeY))
+    ground = image.get_rect()
+    return image, ground
+
+ground, ground_rect = create_ground(80, 80)
+
+# Main game loop
 while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -44,16 +75,26 @@ while running:
     keys = pygame.key.get_pressed()
 
     if keys[pygame.K_SPACE] or keys[pygame.K_UP]:
-        print("Jumped")
-        player_rect.y -= step
+        print(player_rect.y)
+        if player_rect.y >= 0 and jumped == False:
+            print("Jumped", jumped)
+            jumped = True
+            player_sprite = pygame.image.load("assets/jump.png").convert_alpha()
+            player_rect.y -= step
+        else:
+            jumped = False
     if keys[pygame.K_a] or keys[pygame.K_LEFT]:
         print("Left")
+        player_sprite = pygame.image.load("assets/idle.png").convert_alpha()
         player_rect.x -= step
     if keys[pygame.K_d] or keys[pygame.K_RIGHT]:
         print("Right")
+        player_sprite = pygame.image.load("assets/idle.png").convert_alpha()
         player_rect.x += step
 
     screen.fill("white")
+
+    screen.blit(background, (0, 0))
 
     player_rect.y += gravity - 1
 
@@ -71,21 +112,23 @@ while running:
 
     # door = create_platform("blue", 700, 200, 50, 100)
 
+    # Easy method to create ground maybe?
     offset = 0
-    for i in range(17):
-        create_ground(offset, 500, 50, 50)
+    for i in range(16):
+        # Never create objects in the game loop instead store them then blit them inside the loop
+        screen.blit(ground, (i + offset, screen_height - 80))
         offset += 50
+    
+    collision = pygame.Rect.colliderect(player_rect, ground_rect)
+    # print(collision)
 
-    # create_ground(0, 100, 50, 50)
-    # create_ground(80, 100, 50, 50)
-    # create_ground(160, 100, 50, 50)
 
-    screen.blit(player_sprite, (player_rect.x, player_rect.y))
+    screen.blit(player_sprite, (player_rect.x + 300, player_rect.y + 400))
 
     # Essential pygame thing helps with rendering our stuff
     pygame.display.flip()
 
     # Make game run at 60fps
-    # clock.tick(60)
+    clock.tick(60)
 
 pygame.quit()
