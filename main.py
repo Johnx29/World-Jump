@@ -1,8 +1,7 @@
 # Platformer game made in PyGame by Johnny Huang (340893478) 
 
-# Import other modules or scripts
+# Add other libraries to be used in the game or any external scripts
 import pygame
-# import Spritesheet
 
 # PyGame setup
 pygame.init()
@@ -18,10 +17,10 @@ icon = pygame.image.load("assets/idle.png")
 pygame.display.set_caption(caption)
 pygame.display.set_icon(icon)
 
-# Get our background
-background = pygame.image.load("assets/foreground.png").convert_alpha()
+# Create a variable to store our background
+background = pygame.image.load("assets/background.png").convert_alpha()
 
-# Get our player sprite
+# Create a variable to store our player sprite
 player_sprite = pygame.image.load("assets/idle.png").convert_alpha()
 player_rect = player_sprite.get_rect()
 
@@ -31,6 +30,7 @@ step = 5
 gravity = 2
 
 jumped = False
+
 
 def create_platform(color, width, height, sizeX, sizeY):
     '''Used for debugging purposes when I have no assets
@@ -64,6 +64,10 @@ def create_ground(sizeX, sizeY):
     ground = image.get_rect()
     return image, ground
 
+def create_button():
+    button = pygame.draw.Rect()
+    return button
+
 ground, ground_rect = create_ground(80, 80)
 
 # Main game loop
@@ -96,36 +100,27 @@ while running:
 
     screen.blit(background, (0, 0))
 
-    player_rect.y += gravity - 1
-
-    # Borders
-    # platform = create_platform("brown", 0, 550, width, 50)
-    # platform2 = create_platform("brown", 0, 10, 50, width)
-    # platform3 = create_platform("brown", 750, 10, 50, width)
-    # platform4 = create_platform("brown", 0, 0, width, 50)
-
-    # Blocks
-    # block = create_platform("green", 50, 500, 200, 50)
-    # block2 = create_platform("green", 300, 400, 200, 50)
-
-    # block3 = create_platform("green", 50, 50, 50, 50)
-
-    # door = create_platform("blue", 700, 200, 50, 100)
+    if player_rect.y >= 120:
+        player_rect.y = player_rect.y
+        player_sprite = pygame.image.load("assets/idle.png").convert_alpha()
+    else:
+        player_rect.y += gravity - 1
 
     # Easy method to create ground maybe?
     offset = 0
     for i in range(16):
-        # Never create objects in the game loop instead store them then blit them inside the loop
+        # Never create objects in the game loop instead store them, then blit them inside the loop
         screen.blit(ground, (i + offset, screen_height - 80))
         offset += 50
     
+    # Add all the obstacles to a group then loop through the group to check for collision
     collision = pygame.Rect.colliderect(player_rect, ground_rect)
     # print(collision)
 
 
-    screen.blit(player_sprite, (player_rect.x + 300, player_rect.y + 400))
+    screen.blit(player_sprite, (player_rect.x + screen_width / 2, player_rect.y + screen_height / 2))
 
-    # Essential pygame thing helps with rendering our stuff
+    # Crucial pygame thing helps with rendering our stuff on screen
     pygame.display.flip()
 
     # Make game run at 60fps
