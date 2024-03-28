@@ -2,12 +2,11 @@
 
 # Add other libraries to be used in the game or any external scripts
 import pygame
-from pytmx.util_pygame import load_pygame
 
 # PyGame setup
 pygame.init()
-screen_width = 800
-screen_height = 600
+screen_width = 960
+screen_height = 540
 screen = pygame.display.set_mode((screen_width, screen_height))
 clock = pygame.time.Clock()
 running = True
@@ -22,80 +21,53 @@ pygame.display.set_icon(icon)
 background = pygame.image.load("assets/background.png").convert_alpha()
 
 # Create a variable to store our player sprite
-player_sprite = pygame.image.load("assets/idle.png").convert_alpha()
-player_rect = player_sprite.get_rect()
+# player_sprite = pygame.image.load("assets/idle.png").convert_alpha()
+# player.rect = player_sprite.get_rect()
 
-tmxdata = load_pygame("map.tmx")
-# print(dir(tmxdata))
-print(tmxdata.layers)
+# Create a variable to store our ground / floor
+ground = pygame.image.load("assets/grassMid.png").convert_alpha()
+ground_rect = ground.get_rect()
 
-sprite_group = pygame.sprite.Group()
-
-# for layer in tmxdata.layers:
-#     # if hasattr("layer", "data"):
-#     print(layer)
-#     for x, y, surf in layer.tiles():
-#         print(x, y, surf)
-#         floor = pygame.image.load("assets/ground.jpg")
-#         floor_rect = floor.get_rect()
-#         sprite_group.add(floor)
-
-
-for i in range(20):
-    floor = pygame.sprite.Sprite()
-    floor_image = pygame.image.load("assets/ground.jpg")
-    floor.image = floor_image
-    floor_rect = floor_image.get_rect()
-    sprite_group.add(floor)
-
-# for item in tmxdata.name:
-    # print(item)
-
+# Setup collision groups
+# player_group = pygame.sprite.Group()
+# player_group.add(ground_rect)
+# print(player_group)
 
 # Configurations
 step = 5
 gravity = 2
 
 jumped = False
+collided = False
 
+# Player class that creates the player with its properties
+class setup_player():
+    def __init__(self):
+        print("Created player object")
+        self.sprite = pygame.image.load("assets/idle.png").convert_alpha()
+        self.rect = self.sprite.get_rect()
+        self.newmask = pygame.mask.from_surface(self.sprite)
+        self.mask = self.newmask.to_surface()
 
-def create_platform(color, width, height, sizeX, sizeY):
-    '''Used for debugging purposes when I have no assets
+class setup_platform():
+    def __init__(self):
+        print("Created platform object")
+        self.sprite = pygame.image.load("assets/grassMid.png").convert_alpha()
+        self.rect = self.sprite.get_rect()
 
-    Arguments: 
-        Color : Color value
-        width : int
-        height : int
-        sizeX : int
-        sizeY : int
+class setup_floor():
+    def __init__(self):
+        print("Created ground object")
+        self.sprite = pygame.image.load("assets/grassMid.png").convert_alpha()
+        self.rect = self.sprite.get_rect()
+        self.newmask = pygame.mask.from_surface(self.sprite)
+        self.mask = self.newmask.to_surface()
+        self.group = pygame.sprite.Group()
 
-    Returns:
-        the platform which is a rect
-    '''
-    platform = pygame.draw.rect(screen, color, (width, height, sizeX, sizeY))
-    return platform
-
-def create_ground(sizeX, sizeY):
-    '''Easy method to create the ground
-
-    Arguments:
-        sizeX : Integer
-        sizeY : Integer
-
-    Returns:
-        The image which is surface and ground that is rect
-    '''
-    print("Ground")
-    image = pygame.image.load("assets/ground.jpg").convert_alpha()
-    image = pygame.transform.scale(image, (sizeX, sizeY))
-    ground = image.get_rect()
-    return image, ground
-
-def create_button():
-    button = pygame.draw.Rect()
-    return button
-
-ground, ground_rect = create_ground(screen_width, 50)
+# floor = setup_floor()
+player = setup_player()
+platform = setup_platform()
+# print(player)
 
 # Main game loop
 while running:
@@ -106,50 +78,58 @@ while running:
     keys = pygame.key.get_pressed()
 
     if keys[pygame.K_SPACE] or keys[pygame.K_UP]:
-        print(player_rect.y)
-        if player_rect.y >= 0 and jumped == False:
-            print("Jumped", jumped)
-            jumped = True
-            player_sprite = pygame.image.load("assets/jump.png").convert_alpha()
-            player_rect.y -= step
-        else:
-            jumped = False
+        print("Jumped")
     if keys[pygame.K_a] or keys[pygame.K_LEFT]:
         print("Left")
-        player_sprite = pygame.image.load("assets/idle.png").convert_alpha()
-        player_rect.x -= step
+        # player_sprite = pygame.image.load("assets/idle.png").convert_alpha()
+        player.rect.x -= step
     if keys[pygame.K_d] or keys[pygame.K_RIGHT]:
         print("Right")
-        player_sprite = pygame.image.load("assets/idle.png").convert_alpha()
-        player_rect.x += step
+        # player_sprite = pygame.image.load("assets/idle.png").convert_alpha()
+        player.rect.x += step
 
+    # Refresh the screen
     screen.fill("white")
 
+    # Show background replacing the screen color
     screen.blit(background, (0, 0))
 
-    if player_rect.y >= 150:
-        player_rect.y = player_rect.y
-        player_sprite = pygame.image.load("assets/idle.png").convert_alpha()
-    else:
-        player_rect.y += gravity - 1
+    # Decrease player gravity allowing us to make them fall
+    if not collided:
+        player.rect.y += gravity - 1
 
     # Easy method to create ground maybe?
-    # offset = 0
-    # for i in range(16):
-        # Never create objects in the game loop instead store them, then blit them inside the loop
-        # screen.blit(ground, (i + offset, screen_height - 80))
-        # offset += 50
+    for i in range(0, screen_width, 70):
+        screen.blit(ground, (i, 200 + screen_height / 2))
+        new_ground_mask = pygame.mask.from_surface(ground)
+        ground_mask = new_ground_mask.to_surface()
 
-    screen.blit(ground, (0, 250 + screen_height / 2, 0, 0))
+    # player_mask = pygame.mask.from_surface(player_sprite)
+    # mask = player_mask.to_surface()
+
+    # offset_x = player.rect.x - ground_rect.x
+    # offset_y = player.rect.y - ground_rect.y
+
+    # print(offset_y)
+
+    # if player_mask.overlap(ground_mask, (offset_x, offset_y)):
+    #     print("Collided with floor")
+    #     player.rect.x = player.rect.x
+    #     player.rect.y = player.rect.y
+    #     collided = True
+    # else:
+    #     print("Not colliding")
+    #     collided = False
+
+    for platforms in platform_group():
+        player.mask.overlap(platform)
+
+    # Show player on screen with the mask
+    # screen.blit(player.mask, (player.rect.x, player.rect.x))
+    screen.blit(player.sprite, (player.rect.x, player.rect.y))
     
-    # Add all the obstacles to a group then loop through the group to check for collision
-    collision = pygame.Rect.colliderect(player_rect, ground_rect)
-    # print(collision)
-
-
-    screen.blit(player_sprite, (player_rect.x + screen_width / 2, player_rect.y + screen_height / 2))
-
-    sprite_group.draw(screen)
+    # for i in range(0, 80, 70):
+    #     screen.blit(platform.sprite, (i, 300))
 
     # Crucial pygame thing helps with rendering our stuff on screen
     pygame.display.flip()
