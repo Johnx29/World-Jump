@@ -1,8 +1,8 @@
 import pygame
 
-class Player():
+class Player(pygame.sprite.Sprite):
     def __init__(self, asset):
-        print("Created player object")
-        self.sprite = pygame.image.load(asset).convert_alpha()
-        self.rect = self.sprite.get_rect()
-        self.mask = pygame.mask.from_surface(self.sprite)
+        super().__init__()
+        self.image = pygame.image.load(asset).convert_alpha()
+        self.rect = self.image.get_rect()
+        self.mask = pygame.mask.from_surface(self.image)

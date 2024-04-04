@@ -1,7 +1,8 @@
 import pygame
 
-class Ground():
+class Ground(pygame.sprite.Sprite):
     def __init__(self, asset):
-        self.sprite = pygame.image.load(asset)
-        self.rect = self.sprite.get_rect()
-        self.mask = pygame.mask.from_surface(self.sprite)
+        super().__init__()
+        self.image = pygame.image.load(asset)
+        self.rect = self.image.get_rect()
+        self.mask = pygame.mask.from_surface(self.image)
