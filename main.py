@@ -1,7 +1,39 @@
 # Add other libraries to be used in the game or any python scripts
 import pygame
 from player import Player
-from ground import Ground
+from block import Block
+from door import Door
+
+def show_debug_menu():
+    example = create_text(f"Left: {player.rect.left}")
+    example2 = create_text(f"Right: {player.rect.right}")
+    example3 = create_text(f"Top: {player.rect.top}")
+    example4 = create_text(f"Bottom: {player.rect.bottom}")
+    example5 = create_text(f"X: {player.rect.x} | Y: {player.rect.y}")
+
+    screen.blit(example, (0, 0))
+    screen.blit(example2, (0, 40))
+    screen.blit(example3, (0, 80))
+    screen.blit(example4, (0, 120))
+    screen.blit(example5, (0, 160))
+
+def create_text(text):
+    font = pygame.font.SysFont("Arial", 20)
+    new_text = font.render(text, True, ("black"))
+    return new_text
+
+def create_floor():
+    for i in range(0, screen_width, 70):
+        floor = Block("assets/grassMid.png", i, screen_height - 70)
+        all_group.add(floor)
+
+def create_block(x, y):
+    new_block = Block("assets/grassMid.png", x, y)
+    all_group.add(new_block)
+
+def create_door(x, y):
+    new_door = Door(x, y)
+    door_group.add(new_door)
 
 # PyGame essentials setup
 pygame.init()
@@ -9,54 +41,35 @@ screen_width = 960
 screen_height = 540
 screen = pygame.display.set_mode((screen_width, screen_height))
 clock = pygame.time.Clock()
+fps = 60
 running = True
 
 # Change caption text and change default icon to custom icon
-caption = "Platformer Game"
 icon = pygame.image.load("assets/player/p1_stand.png")
-pygame.display.set_caption(caption)
+caption = "Platformer Game"
 pygame.display.set_icon(icon)
+pygame.display.set_caption(caption)
 
-# Call our functions to create the objects
-player = Player("assets/player/p1_stand.png")
-ground = Ground("assets/grassMid.png")
-
-# Create a variable to store our background
+# Variable to store our background image
 background = pygame.image.load("assets/background.png").convert_alpha()
 
-# Configurations
-jumped = False
-collided = False
-step = 5
-gravity = 2
+font = pygame.font.SysFont("arial", 30)
+text = font.render("Blah", False, ("black"))
+
+# Create objects like player
+player = Player(100, 300)
 
 # Setup collision groups
 player_group = pygame.sprite.Group()
-floor_group = pygame.sprite.Group()
+all_group = pygame.sprite.Group()
+door_group = pygame.sprite.Group()
 player_group.add(player)
-floor_group.add(ground)
 
-def start_game():
-    """Handles all the game logic without messing with the default PyGame game loop
-    """
-
-    # Decrease player gravity allowing us to make them fall
-    # player.rect.y += gravity - 1
-
-    # Easy method to create ground maybe?
-    # for i in range(0, screen_width, 70):
-        # floor_group.add(ground)
-        # screen.blit(ground.sprite, (i, 200 + screen_height / 2))
-
-    # Efficient way for checking collisions, uses the mask passed through spritecollide (Pixel Perfect)
-    if pygame.sprite.spritecollide(player, floor_group, False, pygame.sprite.collide_mask):
-        print("Hit")
-
-    floor_group.update((250, 250), "WTF")
-
-    # Rendering / Drawing our images as sprites on screen
-    floor_group.draw(screen)
-    player_group.draw(screen)
+# Create the floor
+create_floor()
+create_block(100, 200)
+create_block(400, 400)
+create_door(screen_width - 70, 400)
 
 # Main game loop
 while running:
@@ -64,32 +77,25 @@ while running:
         if event.type == pygame.QUIT:
             running = False
 
-    # Handle key inputs
-    keys = pygame.key.get_pressed()
-
-    if keys[pygame.K_SPACE] or keys[pygame.K_UP]:
-        print("Jumped")
-        player.rect.y -= step
-    if keys[pygame.K_a] or keys[pygame.K_LEFT]:
-        print("Left")
-        player.rect.x -= step
-    if keys[pygame.K_d] or keys[pygame.K_RIGHT]:
-        print("Right")
-        player.rect.x += step
+    # Call the function that handles all our player movement and logic
+    # block.update(player_group)
+    player.update(all_group, door_group)
 
     # Refresh the screen
     screen.fill("white")
 
     # Show background replacing the screen color
     screen.blit(background, (0, 0))
-
-    # This calls the start game function which allows our main loop to stay organized
-    start_game()
+    show_debug_menu()
+    # Render player and objects on screen
+    all_group.draw(screen)
+    door_group.draw(screen)
+    player_group.draw(screen)
 
     # Crucial pygame thing helps with rendering our stuff on screen
     pygame.display.flip()
 
     # Make game run at 60fps
-    clock.tick(60)
+    clock.tick(fps)
 
 pygame.quit()
