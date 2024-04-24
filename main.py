@@ -1,5 +1,6 @@
 # Add other libraries to be used in the game or any python scripts
 import pygame
+from pytmx.util_pygame import load_pygame
 from player import Player
 from block import Block
 from door import Door
@@ -31,14 +32,37 @@ def create_block(x, y):
     new_block = Block("assets/grassMid.png", x, y)
     all_group.add(new_block)
 
+def create_platform(x, y, target):
+    offset = 0
+    for i in range(1, target+1):
+        create_block(x + offset, y)
+        offset += 70
+
 def create_door(x, y):
     new_door = Door(x, y)
     door_group.add(new_door)
 
+def load_tiled_map():
+    tiled_map = load_pygame("level1.tmx")
+
+    for layer in tiled_map.visible_layers:
+        # print(layer)
+        for x, y, gid in layer:
+            tile = tiled_map.get_tile_image_by_gid(gid)
+            # playertile = tiled_map.get_layer_by_name("Player")
+            if tile:
+                # print(tiled_map.tilewidth, tiled_map.tileheight)
+                # print(tiled_map.get_layer_by_name("Player"))
+                # screen.blit(tile, (x * tiled_map.tilewidth, y * tiled_map.tileheight))
+                new_tile = Block(tile, x * tiled_map.tilewidth, y * tiled_map.tileheight)
+                all_group.add(new_tile)
+
+    # print(dir(tiled_map))
+
 # PyGame essentials setup
 pygame.init()
-screen_width = 960
-screen_height = 540
+screen_width = 1280
+screen_height = 720
 screen = pygame.display.set_mode((screen_width, screen_height))
 clock = pygame.time.Clock()
 fps = 60
@@ -53,8 +77,10 @@ pygame.display.set_caption(caption)
 # Variable to store our background image
 background = pygame.image.load("assets/background.png").convert_alpha()
 
-font = pygame.font.SysFont("arial", 30)
-text = font.render("Blah", False, ("black"))
+font = pygame.font.SysFont("Helvetica", size=60, bold=True, italic=False)
+game_title_text = font.render("Platformer Game", True, ("blue"))
+play_text = font.render("Play", True, ("white"))
+play_text_rect = play_text.get_rect()
 
 # Create objects like player
 player = Player(100, 300)
@@ -65,17 +91,19 @@ all_group = pygame.sprite.Group()
 door_group = pygame.sprite.Group()
 player_group.add(player)
 
-# Create the floor
-create_floor()
-create_block(100, 200)
-create_block(400, 400)
-create_door(screen_width - 70, 400)
+load_tiled_map()
 
 # Main game loop
 while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
+
+    # Game menu play handler
+    # if pygame.colliderect(text):
+        # print("Clicked play")
+        # Load next menu to select level
+        # Load the selected level from 1-5 on clicked choice
 
     # Call the function that handles all our player movement and logic
     # block.update(player_group)
@@ -86,11 +114,15 @@ while running:
 
     # Show background replacing the screen color
     screen.blit(background, (0, 0))
-    show_debug_menu()
+    # load_tiled_map()
+    # screen.blit(game_title_text, (screen_width // 3.5, screen_height // 20)) # Figure out how to center the text without number set
+    # screen.blit(play_text, (screen_width // 2.4, screen_height // 2))
+
     # Render player and objects on screen
     all_group.draw(screen)
-    door_group.draw(screen)
+    # door_group.draw(screen)
     player_group.draw(screen)
+    show_debug_menu()
 
     # Crucial pygame thing helps with rendering our stuff on screen
     pygame.display.flip()

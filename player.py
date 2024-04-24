@@ -5,7 +5,8 @@ class Player(pygame.sprite.Sprite):
     def __init__(self, x, y):
         super().__init__()
         self.images = []
-        self.image = pygame.image.load("assets/player/p1_stand.png").convert_alpha()
+        # self.image = pygame.image.load("assets/player/p1_stand.png").convert_alpha()
+        self.image = pygame.image.load(os.path.join("assets/player", "p1_stand.png"))
         
         for image in os.listdir("assets/player/walk"):
             self.images.append(image)
@@ -13,11 +14,10 @@ class Player(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.x = x
         self.rect.y = y
-        self.mask = pygame.mask.from_surface(self.image)
         self.animation_status = "idle"
         self.animation_index = 0
         self.movement_speed = 5
-        self.animation_cooldown = 13
+        self.animation_cooldown = len(self.images)
         self.moving_left = False
         self.moving_right = False
         self.velocity = 1
@@ -37,35 +37,36 @@ class Player(pygame.sprite.Sprite):
             self.rect.bottom = 540
     
     def update(self, group, group2):
-        dx = 0
-        dy = 0
+        movement_x = 0
+        movement_y = 0
 
         keys = pygame.key.get_pressed()
 
         # print("Left:", self.rect.left, "Right:", self.rect.right, "Top:", self.rect.top, "Bottom:", self.rect.bottom)
 
         if keys[pygame.K_a] or keys[pygame.K_LEFT]:
-            dx -= self.movement_speed
+            movement_x = -self.movement_speed
             self.animation_index += 1
             self.moving_left = True
         elif keys[pygame.K_a] == False or keys[pygame.K_LEFT] == False:
             self.moving_left = False
         if keys[pygame.K_d] or keys[pygame.K_RIGHT]:
-            dx += self.movement_speed
+            movement_x = self.movement_speed
             self.animation_index += 1
             self.moving_right = True
         elif keys[pygame.K_d] == False or keys[pygame.K_RIGHT] == False:
             self.moving_right = False
         if keys[pygame.K_w] == True or keys[pygame.K_UP] == True and self.jumped == False:
-            self.rect.y += -15
+            movement_y = -15
             self.jumped = True
         elif keys[pygame.K_w] == False or keys[pygame.K_UP] == False:
             self.jumped = False
 
-
         # Cooldown by preventing animation going to fast
         if self.animation_index > self.animation_cooldown:
             self.animation_index = 0
+
+        player_animation_path = "assets/player/walk/"
 
         # Handle player animation maybe when polished try using the keywords like "idle", "walk", and "jump"
         if self.animation_index < len(self.images):
@@ -88,9 +89,10 @@ class Player(pygame.sprite.Sprite):
             player_mask_collided = pygame.sprite.spritecollide(self, group, False, pygame.sprite.collide_mask)
             if player_mask_collided:
                 for obj in player_mask_collided:
-                    self.rect.top = obj.rect.bottom
-                    self.rect.bottom = obj.rect.top
-                    print(obj, obj.rect.x, obj.rect.y, obj.rect.top)
+                    # if dy > 0:
+                    if movement_x > 0:
+                        self.rect.top = obj.rect.bottom
+                    # print(obj, obj.rect.x, obj.rect.y, obj.rect.top)
                 # print("Hit", player_collided, player_mask_collided)
                 # self.image.fill("red")
                 self.landed = True
@@ -102,10 +104,10 @@ class Player(pygame.sprite.Sprite):
             print("Door touched")
 
         # Decrease player gravity
-        if not self.landed:
-            self.rect.y += 1
+        self.rect.y += 1
 
         # Move player sprite
-        self.rect.x += dx
+        self.rect.x += movement_x
+        self.rect.y += movement_y
 
-        self.border()
+        # self.border()
