@@ -26,7 +26,7 @@ class Player(pygame.sprite.Sprite):
         self.rect.y = y
         self.animation_status = "idle"
         self.animation_index = 0
-        self.movement_speed = 5
+        self.movement_speed = 4
         self.animation_cooldown = len(self.images)
         self.moving_left = False
         self.moving_right = False
@@ -59,7 +59,7 @@ class Player(pygame.sprite.Sprite):
             return
 
         if keys[pygame.K_a]:
-            movement_x = -2
+            movement_x = -self.movement_speed
             self.moving_left = True
             self.animation_index += 1
             self.moving = True
@@ -67,7 +67,7 @@ class Player(pygame.sprite.Sprite):
             self.moving_left = False
             self.moving = False
         if keys[pygame.K_d]:
-            movement_x = 2
+            movement_x = self.movement_speed
             self.moving_right = True
             self.animation_index += 1
             self.moving = True
@@ -119,17 +119,31 @@ class Player(pygame.sprite.Sprite):
             elif self.moving_right == True:
                 self.image = pygame.image.load(os.path.join(player_animation_folder, self.images[self.animation_index])).convert_alpha()
 
-        # Efficient way of handling player collision by checking rect collision --> mask collision
-        player_collided = pygame.sprite.spritecollide(self, group, False)
-        if player_collided:
-            player_mask_collided = pygame.sprite.spritecollide(self, group, False, pygame.sprite.collide_mask)
-            if player_mask_collided:
-                # print("Hit", player_mask_collided)
-                for obj in player_mask_collided:
-                    if obj.rect.top:
-                        self.rect.bottom - 2
-                        self.rect.bottom = obj.rect.top
-                        print("Oh god")
+        collision = pygame.sprite.spritecollide(self, group, False)
+        if collision:
+            for obj in collision:
+                if self.moving_left:
+                    self.rect.left = obj.rect.right
+                elif self.moving_right:
+                    self.rect.right = obj.rect.left
+                elif self.jumped:
+                    self.rect.top = obj.rect.bottom
+                elif self.jumped == False:
+                    self.rect.bottom = obj.rect.top
+                print(movement_x, movement_y)
+                print(obj)
+        # # Efficient way of handling player collision by checking rect collision --> mask collision
+        # player_collided = pygame.sprite.spritecollide(self, group, False)
+        # if player_collided:
+        #     player_mask_collided = pygame.sprite.spritecollide(self, group, False, pygame.sprite.collide_mask)
+        #     if player_mask_collided:
+        #         # print("Hit", player_mask_collided)
+        #         for obj in player_mask_collided:
+        #             # if obj.rect.top:
+        #             if movement_x < -1:
+        #                 self.rect.left = obj.rect.right
+        #                 # self.rect.bottom = obj.rect.top
+        #                 # print("Oh god")
 
 def load_tiled_map():
     tiled_map = load_pygame("level1.tmx")
@@ -144,6 +158,12 @@ def load_tiled_map():
     #             # print(tiled_map.tilewidth, tiled_map.tileheight)
     #             # print(tiled_map.get_layer_by_name("Player"))
     #             # screen.blit(tile, (x * tiled_map.tilewidth, y * tiled_map.tileheight))
+                    new_tile = Block(tile, x * tiled_map.tilewidth, y * tiled_map.tileheight)
+                    block_group.add(new_tile)
+        elif layer.name == "Wall":
+            for x, y, gid in layer:
+                tile = tiled_map.get_tile_image_by_gid(gid)
+                if tile:
                     new_tile = Block(tile, x * tiled_map.tilewidth, y * tiled_map.tileheight)
                     block_group.add(new_tile)
         # Load everything as image aka foreground
