@@ -34,6 +34,10 @@ class Player(pygame.sprite.Sprite):
         self.jumped = False
         self.velocity = 0
         self.current_direction = ""
+        self.left_collision = False
+        self.right_collision = False
+        self.bottom_collision = False
+        self.top_collision = False
 
     def border(self):
         # Establish a border for player left and right at x axis
@@ -58,7 +62,7 @@ class Player(pygame.sprite.Sprite):
         if keys[pygame.K_a] and keys[pygame.K_d]:
             return
 
-        if keys[pygame.K_a]:
+        if keys[pygame.K_a] and self.left_collision == False:
             movement_x = -self.movement_speed
             self.moving_left = True
             self.animation_index += 1
@@ -66,7 +70,7 @@ class Player(pygame.sprite.Sprite):
         else:
             self.moving_left = False
             self.moving = False
-        if keys[pygame.K_d]:
+        if keys[pygame.K_d] and self.right_collision == False:
             movement_x = self.movement_speed
             self.moving_right = True
             self.animation_index += 1
@@ -124,14 +128,19 @@ class Player(pygame.sprite.Sprite):
             for obj in collision:
                 if self.moving_left:
                     self.rect.left = obj.rect.right
+                    # self.rect.x += 10
                 elif self.moving_right:
                     self.rect.right = obj.rect.left
-                elif self.jumped:
-                    self.rect.top = obj.rect.bottom
-                elif self.jumped == False:
+                elif movement_y < 2:
+                    self.rect.bottom = obj.rect.bottom + self.rect.top
+                elif movement_y > 2:
+                    print("I here")
                     self.rect.bottom = obj.rect.top
                 print(movement_x, movement_y)
                 print(obj)
+        # else:
+            # print("No collision")
+
         # # Efficient way of handling player collision by checking rect collision --> mask collision
         # player_collided = pygame.sprite.spritecollide(self, group, False)
         # if player_collided:
@@ -246,6 +255,7 @@ while running:
                 player.jumped = True
                 player.velocity = -15
         if event.type == pygame.KEYUP:
+            # print("Let go")
             if event.key == pygame.K_w:
                 player.jumped = False
 
