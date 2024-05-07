@@ -15,7 +15,6 @@ class Player(pygame.sprite.Sprite):
     def __init__(self, x, y):
         super().__init__()
         self.images = []
-        # self.image = pygame.image.load("assets/player/p1_stand.png").convert_alpha()
         self.image = pygame.image.load(os.path.join("assets/player", "p1_stand.png")).convert_alpha()
         
         for image in os.listdir("assets/player/walk"):
@@ -34,23 +33,6 @@ class Player(pygame.sprite.Sprite):
         self.jumped = False
         self.velocity = 0
         self.current_direction = ""
-        self.left_collision = False
-        self.right_collision = False
-        self.bottom_collision = False
-        self.top_collision = False
-
-    def border(self):
-        # Establish a border for player left and right at x axis
-        if self.rect.left < 10:
-            self.rect.left = 10
-        # if self.rect.right > screen_height // 2:
-            # self.rect.right = screen_height // 2
-
-        # Establish a border for player both up and down at y axis
-        if self.rect.top < -0:
-            self.rect.top = -0
-        if self.rect.bottom > screen_width // 2:
-            self.rect.bottom = screen_width // 2
     
     def update(self, group):
         movement_x = 0
@@ -62,7 +44,7 @@ class Player(pygame.sprite.Sprite):
         if keys[pygame.K_a] and keys[pygame.K_d]:
             return
 
-        if keys[pygame.K_a] and self.left_collision == False:
+        if keys[pygame.K_a]:
             movement_x = -self.movement_speed
             self.moving_left = True
             self.animation_index += 1
@@ -70,7 +52,7 @@ class Player(pygame.sprite.Sprite):
         else:
             self.moving_left = False
             self.moving = False
-        if keys[pygame.K_d] and self.right_collision == False:
+        if keys[pygame.K_d]:
             movement_x = self.movement_speed
             self.moving_right = True
             self.animation_index += 1
@@ -89,16 +71,11 @@ class Player(pygame.sprite.Sprite):
         self.rect.x += movement_x
         self.rect.y += movement_y
 
-        self.border()
-
         # Cooldown by preventing animation going to fast
         if self.animation_index > self.animation_cooldown:
             self.animation_index = 0
 
         player_animation_folder = "assets/player/walk/"
-
-        # if self.jumped == True:
-            # self.image = pygame.image.load(os.path.join("assets/player/", "p1_jump.png"))
 
         # Player changed direction
         if self.moving_left == True:
@@ -123,50 +100,24 @@ class Player(pygame.sprite.Sprite):
             elif self.moving_right == True:
                 self.image = pygame.image.load(os.path.join(player_animation_folder, self.images[self.animation_index])).convert_alpha()
 
+        # VERTICAL_COLLISION
         collision = pygame.sprite.spritecollide(self, group, False)
         if collision:
             for obj in collision:
-                if self.moving_left:
-                    self.rect.left = obj.rect.right
-                    # self.rect.x += 10
-                elif self.moving_right:
-                    self.rect.right = obj.rect.left
-                elif movement_y < 2:
-                    self.rect.bottom = obj.rect.bottom + self.rect.top
-                elif movement_y > 2:
-                    print("I here")
+                if movement_y > 0:
                     self.rect.bottom = obj.rect.top
-                print(movement_x, movement_y)
-                print(obj)
-        # else:
-            # print("No collision")
-
-        # # Efficient way of handling player collision by checking rect collision --> mask collision
-        # player_collided = pygame.sprite.spritecollide(self, group, False)
-        # if player_collided:
-        #     player_mask_collided = pygame.sprite.spritecollide(self, group, False, pygame.sprite.collide_mask)
-        #     if player_mask_collided:
-        #         # print("Hit", player_mask_collided)
-        #         for obj in player_mask_collided:
-        #             # if obj.rect.top:
-        #             if movement_x < -1:
-        #                 self.rect.left = obj.rect.right
-        #                 # self.rect.bottom = obj.rect.top
-        #                 # print("Oh god")
+                elif movement_y < 0:
+                    self.rect.top = obj.rect.bottom
 
 def load_tiled_map():
     tiled_map = load_pygame("level1.tmx")
 
     for layer in tiled_map.visible_layers:
-        # print(layer)
         # Apply collision to layer objects
-        if layer.name == "Objects":
+        if layer.name == "Objects" or layer.name == "Ground":
             for x, y, gid in layer:
                 tile = tiled_map.get_tile_image_by_gid(gid)
                 if tile:
-    #             # print(tiled_map.tilewidth, tiled_map.tileheight)
-    #             # print(tiled_map.get_layer_by_name("Player"))
-    #             # screen.blit(tile, (x * tiled_map.tilewidth, y * tiled_map.tileheight))
                     new_tile = Block(tile, x * tiled_map.tilewidth, y * tiled_map.tileheight)
                     block_group.add(new_tile)
         elif layer.name == "Wall":
@@ -183,16 +134,6 @@ def load_tiled_map():
                     # print(tile, layer.name)
                     new_tile = Block(tile, x * tiled_map.tilewidth, y * tiled_map.tileheight)
                     foreground_group.add(new_tile)
-
-        # for x, y, gid in layer:
-        #     tile = tiled_map.get_tile_image_by_gid(gid)
-        #     if tile:
-    #             # print(tiled_map.tilewidth, tiled_map.tileheight)
-    #             # print(tiled_map.get_layer_by_name("Player"))
-    #             # screen.blit(tile, (x * tiled_map.tilewidth, y * tiled_map.tileheight))
-                # new_tile = Block(tile, x * tiled_map.tilewidth, y * tiled_map.tileheight)
-                # block_group.add(new_tile)
-    # # print(dir(tiled_map))
 
 def show_debug_menu():
     example = create_text(f"Left: {player.rect.left}")
@@ -214,8 +155,8 @@ def create_text(text):
 
 # PyGame essentials setup
 pygame.init()
-screen_width = 1280
-screen_height = 720
+screen_width = 1260
+screen_height = 700
 screen = pygame.display.set_mode((screen_width, screen_height))
 clock = pygame.time.Clock()
 fps = 60
@@ -228,11 +169,6 @@ pygame.display.set_caption("Platformer Game")
 
 # Variable to store our background image
 background = pygame.image.load(os.path.join("assets/", "background.png")).convert_alpha()
-
-font = pygame.font.SysFont("Helvetica", size=60, bold=True, italic=False)
-game_title_text = font.render("Platformer Game", True, ("blue"))
-play_text = font.render("Play", True, ("white"))
-play_text_rect = play_text.get_rect()
 
 # Create objects like player
 player = Player(100, 300)
@@ -259,14 +195,7 @@ while running:
             if event.key == pygame.K_w:
                 player.jumped = False
 
-    # Game menu play handler
-    # if pygame.colliderect(text):
-        # print("Clicked play")
-        # Load next menu to select level
-        # Load the selected level from 1-5 on clicked choice
-
     # Call the function that handles all our player movement and logic
-    # block.update(player_group)
     player.update(block_group)
 
     # Refresh the screen
@@ -274,9 +203,6 @@ while running:
 
     # Show background replacing the screen color
     screen.blit(background, (0, 0))
-    # load_tiled_map()
-    # screen.blit(game_title_text, (screen_width // 3.5, screen_height // 20)) # Figure out how to center the text without number set
-    # screen.blit(play_text, (screen_width // 2.4, screen_height // 2))
 
     # Render player and objects on screen
     foreground_group.draw(screen)
