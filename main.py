@@ -3,6 +3,14 @@ import pygame
 import os
 from pytmx.util_pygame import load_pygame
 
+class Spike(pygame.sprite.Sprite):
+    def __init__(self, image, x, y):
+        super().__init__()
+        self.image = image
+        self.rect = self.image.get_rect()
+        self.rect.x = x
+        self.rect.y = y
+
 class Block(pygame.sprite.Sprite):
     def __init__(self, image, x, y):
         super().__init__()
@@ -33,8 +41,9 @@ class Player(pygame.sprite.Sprite):
         self.jumped = False
         self.velocity = 0
         self.current_direction = ""
+        self.jump_count = 0
     
-    def update(self, group):
+    def update(self, group, group2):
         movement_x = 0
         movement_y = 0
         # print("Left:", self.rect.left, "Right:", self.rect.right, "Top:", self.rect.top, "Bottom:", self.rect.bottom)
@@ -60,6 +69,9 @@ class Player(pygame.sprite.Sprite):
         else:
             self.moving_right = False
             self.moving = False
+        if keys[pygame.K_w] and self.jump_count < 1:
+            self.velocity = -15
+            self.jump_count = 1
 
         # Add gravity
         self.velocity += 1
@@ -88,6 +100,13 @@ class Player(pygame.sprite.Sprite):
         elif self.current_direction == "Right" and self.moving == False:
             self.image = pygame.image.load(os.path.join(player_folder, "p1_stand.png")).convert_alpha()
 
+        if self.jump_count > 0 and self.current_direction == "Right":
+            self.image = pygame.image.load(os.path.join(player_folder, "p1_jump.png")).convert_alpha()
+        elif self.jump_count > 0 and self.current_direction == "Left":
+            image = pygame.image.load(os.path.join(player_folder, "p1_jump.png")).convert_alpha()
+            flipped = pygame.transform.flip(image, True, False)
+            self.image = flipped
+
         # Handle player walking animation
         if self.animation_index < len(self.images):
             if self.moving_left == True:
@@ -105,13 +124,13 @@ class Player(pygame.sprite.Sprite):
             if movement_y > 0:
                 self.rect.bottom = collision[0].rect.top
                 movement_y = 0
+                self.jump_count = 0
             elif movement_y < 0:
                 self.rect.top = collision[0].rect.bottom
                 movement_y = 0
 
         # HORIZONTAL_COLLISION
-        # Move player rect by x-axis a bit to ensure it is on horizontal collision
-        # x_collision = False
+        # Move player rect by x-axis a bit to ensure it is on horizontal collision        
         self.rect.x += movement_x
         collision2 = pygame.sprite.spritecollide(self, group, False)
         if collision2:
@@ -121,6 +140,12 @@ class Player(pygame.sprite.Sprite):
             elif movement_x < 0:
                 self.rect.left = collision2[0].rect.right
                 movement_x = 0
+
+        # SPIKE_COLLISION
+        spike_collision = pygame.sprite.spritecollide(self, group2, False)
+        if spike_collision:
+            print("Hit")
+            self.rect.x = 100
 
 def load_tiled_map():
     tiled_map = load_pygame("level1.tmx")
@@ -133,18 +158,17 @@ def load_tiled_map():
                 if tile:
                     new_tile = Block(tile, x * tiled_map.tilewidth, y * tiled_map.tileheight)
                     block_group.add(new_tile)
-        # elif layer.name == "Wall":
-        #     for x, y, gid in layer:
-        #         tile = tiled_map.get_tile_image_by_gid(gid)
-        #         if tile:
-        #             new_tile = Block(tile, x * tiled_map.tilewidth, y * tiled_map.tileheight)
-        #             block_group.add(new_tile)
+        elif layer.name == "Spike":
+            for x, y, gid in layer:
+                tile = tiled_map.get_tile_image_by_gid(gid)
+                if tile:
+                    new_spike = Spike(tile, x * tiled_map.tilewidth, y * tiled_map.tileheight)
+                    spike_group.add(new_spike)
         # Load everything as image aka foreground
         else:
             for x, y, gid in layer:
                 tile = tiled_map.get_tile_image_by_gid(gid)
                 if tile:
-                    # print(tile, layer.name)
                     new_tile = Block(tile, x * tiled_map.tilewidth, y * tiled_map.tileheight)
                     foreground_group.add(new_tile)
 
@@ -190,6 +214,7 @@ player = Player(100, 300)
 player_group = pygame.sprite.Group(player)
 foreground_group = pygame.sprite.Group()
 block_group = pygame.sprite.Group()
+spike_group = pygame.sprite.Group()
 
 load_tiled_map()
 
@@ -199,17 +224,16 @@ while running:
         if event.type == pygame.QUIT:
             running = False
         # Handle player jumping, don't allow hold
-        if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_w:
-                player.jumped = True
-                player.velocity = -15
-        if event.type == pygame.KEYUP:
-            # print("Let go")
-            if event.key == pygame.K_w:
-                player.jumped = False
+        # if event.type == pygame.KEYDOWN:
+        #     print(jump_count)
+        #     if event.key == pygame.K_w:
+        #         print("Can jump")
+        #         player.jumped = True
+        #         player.velocity = -15
+        #         jump_count += 1
 
     # Call the function that handles all our player movement and logic
-    player.update(block_group)
+    player.update(block_group, spike_group)
 
     # Refresh the screen
     screen.fill("white")
@@ -220,6 +244,7 @@ while running:
     # Render player and objects on screen
     foreground_group.draw(screen)
     block_group.draw(screen)
+    spike_group.draw(screen)
     player_group.draw(screen)
     show_debug_menu()
 
