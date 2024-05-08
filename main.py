@@ -67,15 +67,12 @@ class Player(pygame.sprite.Sprite):
             self.velocity = 10
         movement_y += self.velocity
 
-        # Move player sprite
-        self.rect.x += movement_x
-        self.rect.y += movement_y
-
         # Cooldown by preventing animation going to fast
         if self.animation_index > self.animation_cooldown:
             self.animation_index = 0
 
         player_animation_folder = "assets/player/walk/"
+        player_folder = "assets/player/"
 
         # Player changed direction
         if self.moving_left == True:
@@ -85,11 +82,11 @@ class Player(pygame.sprite.Sprite):
 
         # Set idle animation relative to direction
         if self.current_direction == "Left" and self.moving == False:
-            image = pygame.image.load(os.path.join("assets/player/", "p1_stand.png")).convert_alpha()
+            image = pygame.image.load(os.path.join(player_folder, "p1_stand.png")).convert_alpha()
             flipped = pygame.transform.flip(image, True, False)
             self.image = flipped
         elif self.current_direction == "Right" and self.moving == False:
-            self.image = pygame.image.load(os.path.join("assets/player/", "p1_stand.png")).convert_alpha()
+            self.image = pygame.image.load(os.path.join(player_folder, "p1_stand.png")).convert_alpha()
 
         # Handle player walking animation
         if self.animation_index < len(self.images):
@@ -101,13 +98,29 @@ class Player(pygame.sprite.Sprite):
                 self.image = pygame.image.load(os.path.join(player_animation_folder, self.images[self.animation_index])).convert_alpha()
 
         # VERTICAL_COLLISION
+        # Move player rect by y-axis a bit to ensure it is on vertical collision
+        self.rect.y += movement_y
         collision = pygame.sprite.spritecollide(self, group, False)
         if collision:
-            for obj in collision:
-                if movement_y > 0:
-                    self.rect.bottom = obj.rect.top
-                elif movement_y < 0:
-                    self.rect.top = obj.rect.bottom
+            if movement_y > 0:
+                self.rect.bottom = collision[0].rect.top
+                movement_y = 0
+            elif movement_y < 0:
+                self.rect.top = collision[0].rect.bottom
+                movement_y = 0
+
+        # HORIZONTAL_COLLISION
+        # Move player rect by x-axis a bit to ensure it is on horizontal collision
+        # x_collision = False
+        self.rect.x += movement_x
+        collision2 = pygame.sprite.spritecollide(self, group, False)
+        if collision2:
+            if movement_x > 0:
+                self.rect.right = collision2[0].rect.left
+                movement_x = 0
+            elif movement_x < 0:
+                self.rect.left = collision2[0].rect.right
+                movement_x = 0
 
 def load_tiled_map():
     tiled_map = load_pygame("level1.tmx")
@@ -120,12 +133,12 @@ def load_tiled_map():
                 if tile:
                     new_tile = Block(tile, x * tiled_map.tilewidth, y * tiled_map.tileheight)
                     block_group.add(new_tile)
-        elif layer.name == "Wall":
-            for x, y, gid in layer:
-                tile = tiled_map.get_tile_image_by_gid(gid)
-                if tile:
-                    new_tile = Block(tile, x * tiled_map.tilewidth, y * tiled_map.tileheight)
-                    block_group.add(new_tile)
+        # elif layer.name == "Wall":
+        #     for x, y, gid in layer:
+        #         tile = tiled_map.get_tile_image_by_gid(gid)
+        #         if tile:
+        #             new_tile = Block(tile, x * tiled_map.tilewidth, y * tiled_map.tileheight)
+        #             block_group.add(new_tile)
         # Load everything as image aka foreground
         else:
             for x, y, gid in layer:
