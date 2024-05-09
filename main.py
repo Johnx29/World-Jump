@@ -3,6 +3,72 @@ import pygame
 import os
 from pytmx.util_pygame import load_pygame
 
+def load_tiled_map(mapfile):
+    tiled_map = load_pygame(mapfile)
+
+    for layer in tiled_map.visible_layers:
+        # Apply collision to layer objects
+        if layer.name == "Objects" or layer.name == "Ground" or layer.name == "Wall":
+            for x, y, gid in layer:
+                tile = tiled_map.get_tile_image_by_gid(gid)
+                if tile:
+                    new_tile = Block(tile, x * tiled_map.tilewidth, y * tiled_map.tileheight)
+                    block_group.add(new_tile)
+        elif layer.name == "Spike":
+            for x, y, gid in layer:
+                tile = tiled_map.get_tile_image_by_gid(gid)
+                if tile:
+                    new_spike = Spike(tile, x * tiled_map.tilewidth, y * tiled_map.tileheight)
+                    spike_group.add(new_spike)
+        elif layer.name == "Coin":
+            for x, y, gid in layer:
+                tile = tiled_map.get_tile_image_by_gid(gid)
+                if tile:
+                    new_coin = Coin(tile, x * tiled_map.tilewidth, y * tiled_map.tileheight)
+                    coin_group.add(new_coin)
+        elif layer.name == "Door":
+            for x, y, gid in layer:
+                tile = tiled_map.get_tile_image_by_gid(gid)
+                if tile:
+                    new_door = Door(tile, x * tiled_map.tilewidth, y * tiled_map.tileheight)
+                    door_group.add(new_door)
+        # Load everything as image aka foreground
+        else:
+            for x, y, gid in layer:
+                tile = tiled_map.get_tile_image_by_gid(gid)
+                if tile:
+                    new_tile = Block(tile, x * tiled_map.tilewidth, y * tiled_map.tileheight)
+                    foreground_group.add(new_tile)
+
+def create_text(text):
+    font = pygame.font.SysFont("Arial", 30)
+    new_text = font.render(text, True, ("gold"))
+    return new_text
+
+def play_sound_effect(path, file):
+    sound = pygame.mixer.Sound(os.path.join(path, file))
+    channel = pygame.mixer.Channel(0)
+    channel.play(sound, loops=0, maxtime=0)
+
+def show_finished_screen():
+    print("Finished screen showed")
+
+class Door(pygame.sprite.Sprite):
+    def __init__(self, image, x, y):
+        super().__init__()
+        self.image = image
+        self.rect = self.image.get_rect()
+        self.rect.x = x
+        self.rect.y = y
+
+class Coin(pygame.sprite.Sprite):
+    def __init__(self, image, x, y):
+        super().__init__()
+        self.image = image
+        self.rect = self.image.get_rect()
+        self.rect.x = x
+        self.rect.y = y
+
 class Spike(pygame.sprite.Sprite):
     def __init__(self, image, x, y):
         super().__init__()
@@ -31,22 +97,19 @@ class Player(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.x = x
         self.rect.y = y
-        self.animation_status = "idle"
         self.animation_index = 0
         self.movement_speed = 4
         self.animation_cooldown = len(self.images)
         self.moving_left = False
         self.moving_right = False
         self.moving = False
-        self.jumped = False
         self.velocity = 0
         self.current_direction = ""
         self.jump_count = 0
     
-    def update(self, group, group2):
+    def update(self, group, group2, group3, group4):
         movement_x = 0
         movement_y = 0
-        # print("Left:", self.rect.left, "Right:", self.rect.right, "Top:", self.rect.top, "Bottom:", self.rect.bottom)
                
         keys = pygame.key.get_pressed()
         # Prevent holding two keys to walk
@@ -147,48 +210,16 @@ class Player(pygame.sprite.Sprite):
             print("Hit")
             self.rect.x = 100
 
-def load_tiled_map():
-    tiled_map = load_pygame("level1.tmx")
+        # COIN_COLLISION
+        # DO KILL ARGUMENT IN EFFECT (Makes our coins disappear on collided)
+        coin_collision = pygame.sprite.spritecollide(self, group3, True)
+        if coin_collision:
+            print("Coin Collected")
 
-    for layer in tiled_map.visible_layers:
-        # Apply collision to layer objects
-        if layer.name == "Objects" or layer.name == "Ground":
-            for x, y, gid in layer:
-                tile = tiled_map.get_tile_image_by_gid(gid)
-                if tile:
-                    new_tile = Block(tile, x * tiled_map.tilewidth, y * tiled_map.tileheight)
-                    block_group.add(new_tile)
-        elif layer.name == "Spike":
-            for x, y, gid in layer:
-                tile = tiled_map.get_tile_image_by_gid(gid)
-                if tile:
-                    new_spike = Spike(tile, x * tiled_map.tilewidth, y * tiled_map.tileheight)
-                    spike_group.add(new_spike)
-        # Load everything as image aka foreground
-        else:
-            for x, y, gid in layer:
-                tile = tiled_map.get_tile_image_by_gid(gid)
-                if tile:
-                    new_tile = Block(tile, x * tiled_map.tilewidth, y * tiled_map.tileheight)
-                    foreground_group.add(new_tile)
-
-def show_debug_menu():
-    example = create_text(f"Left: {player.rect.left}")
-    example2 = create_text(f"Right: {player.rect.right}")
-    example3 = create_text(f"Top: {player.rect.top}")
-    example4 = create_text(f"Bottom: {player.rect.bottom}")
-    example5 = create_text(f"X: {player.rect.x} | Y: {player.rect.y}")
-
-    screen.blit(example, (0, 0))
-    screen.blit(example2, (0, 40))
-    screen.blit(example3, (0, 80))
-    screen.blit(example4, (0, 120))
-    screen.blit(example5, (0, 160))
-
-def create_text(text):
-    font = pygame.font.SysFont("Arial", 20)
-    new_text = font.render(text, True, ("black"))
-    return new_text
+        # DOOR_COLLISION
+        door_collision = pygame.sprite.spritecollide(self, group4, False)
+        if door_collision:
+            print("door")
 
 # PyGame essentials setup
 pygame.init()
@@ -215,25 +246,21 @@ player_group = pygame.sprite.Group(player)
 foreground_group = pygame.sprite.Group()
 block_group = pygame.sprite.Group()
 spike_group = pygame.sprite.Group()
+coin_group = pygame.sprite.Group()
+door_group = pygame.sprite.Group()
 
-load_tiled_map()
+load_tiled_map("level1.tmx")
+
+coin_count = create_text(f"Coin: {0}")
 
 # Main game loop
 while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
-        # Handle player jumping, don't allow hold
-        # if event.type == pygame.KEYDOWN:
-        #     print(jump_count)
-        #     if event.key == pygame.K_w:
-        #         print("Can jump")
-        #         player.jumped = True
-        #         player.velocity = -15
-        #         jump_count += 1
 
     # Call the function that handles all our player movement and logic
-    player.update(block_group, spike_group)
+    player.update(block_group, spike_group, coin_group, door_group)
 
     # Refresh the screen
     screen.fill("white")
@@ -245,8 +272,11 @@ while running:
     foreground_group.draw(screen)
     block_group.draw(screen)
     spike_group.draw(screen)
+    coin_group.draw(screen)
+    door_group.draw(screen)
     player_group.draw(screen)
-    show_debug_menu()
+
+    screen.blit(coin_count, (0, 0))
 
     # Crucial pygame thing helps with rendering our stuff on screen
     pygame.display.flip()
