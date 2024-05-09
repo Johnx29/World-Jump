@@ -40,9 +40,9 @@ def load_tiled_map(mapfile):
                     new_tile = Block(tile, x * tiled_map.tilewidth, y * tiled_map.tileheight)
                     foreground_group.add(new_tile)
 
-def create_text(text):
+def create_text(text, color):
     font = pygame.font.SysFont("Arial", 30)
-    new_text = font.render(text, True, ("gold"))
+    new_text = font.render(text, True, (color))
     return new_text
 
 def play_sound_effect(path, file):
@@ -52,6 +52,10 @@ def play_sound_effect(path, file):
 
 def show_finished_screen():
     print("Finished screen showed")
+    screen.fill("blue")
+    finished = create_text(f"Congratulation", "Green")
+    screen.blit(finished, (600, 200))
+    pygame.display.flip()
 
 class Door(pygame.sprite.Sprite):
     def __init__(self, image, x, y):
@@ -106,13 +110,15 @@ class Player(pygame.sprite.Sprite):
         self.velocity = 0
         self.current_direction = ""
         self.jump_count = 0
+        self.coin_collected = 0
+        self.completed_level = False
     
     def update(self, group, group2, group3, group4):
         movement_x = 0
         movement_y = 0
                
         keys = pygame.key.get_pressed()
-        # Prevent holding two keys to walk
+        # DON'T ALLOW PEOPLE TO HOLD 2 KEYS TO WALK
         if keys[pygame.K_a] and keys[pygame.K_d]:
             return
 
@@ -136,26 +142,26 @@ class Player(pygame.sprite.Sprite):
             self.velocity = -15
             self.jump_count = 1
 
-        # Add gravity
+        # ADD GRAVITY
         self.velocity += 1
         if self.velocity > 10:
             self.velocity = 10
         movement_y += self.velocity
 
-        # Cooldown by preventing animation going to fast
+        # SET ANIMATION_INDEX TO ZERO WHEN IT GOES THROUGH THEM ALL, TO KEEP WALKING
         if self.animation_index > self.animation_cooldown:
             self.animation_index = 0
 
         player_animation_folder = "assets/player/walk/"
         player_folder = "assets/player/"
 
-        # Player changed direction
+        # CHECK IF PLAYER CHANGED DIRECTION
         if self.moving_left == True:
             self.current_direction = "Left"
         elif self.moving_right == True:
             self.current_direction = "Right"
 
-        # Set idle animation relative to direction
+        # SET IDLE ANIMATION RELATIVE TO DIRECTION
         if self.current_direction == "Left" and self.moving == False:
             image = pygame.image.load(os.path.join(player_folder, "p1_stand.png")).convert_alpha()
             flipped = pygame.transform.flip(image, True, False)
@@ -163,6 +169,7 @@ class Player(pygame.sprite.Sprite):
         elif self.current_direction == "Right" and self.moving == False:
             self.image = pygame.image.load(os.path.join(player_folder, "p1_stand.png")).convert_alpha()
 
+        # SET JUMP ANIMATION RELATIVE TO DIRECTION
         if self.jump_count > 0 and self.current_direction == "Right":
             self.image = pygame.image.load(os.path.join(player_folder, "p1_jump.png")).convert_alpha()
         elif self.jump_count > 0 and self.current_direction == "Left":
@@ -170,7 +177,7 @@ class Player(pygame.sprite.Sprite):
             flipped = pygame.transform.flip(image, True, False)
             self.image = flipped
 
-        # Handle player walking animation
+        # HANDLE PLAYER WALKING ANIMATION
         if self.animation_index < len(self.images):
             if self.moving_left == True:
                 image = pygame.image.load(os.path.join(player_animation_folder, self.images[self.animation_index])).convert_alpha()
@@ -215,11 +222,13 @@ class Player(pygame.sprite.Sprite):
         coin_collision = pygame.sprite.spritecollide(self, group3, True)
         if coin_collision:
             print("Coin Collected")
+            self.coin_collected += 1
 
         # DOOR_COLLISION
         door_collision = pygame.sprite.spritecollide(self, group4, False)
         if door_collision:
-            print("door")
+            if not self.completed_level:
+                self.completed_level = True
 
 # PyGame essentials setup
 pygame.init()
@@ -251,8 +260,6 @@ door_group = pygame.sprite.Group()
 
 load_tiled_map("level1.tmx")
 
-coin_count = create_text(f"Coin: {0}")
-
 # Main game loop
 while running:
     for event in pygame.event.get():
@@ -276,7 +283,11 @@ while running:
     door_group.draw(screen)
     player_group.draw(screen)
 
+    coin_count = create_text(f"Coin: {player.coin_collected}", "Gold")
     screen.blit(coin_count, (0, 0))
+
+    if player.completed_level:
+        show_finished_screen()
 
     # Crucial pygame thing helps with rendering our stuff on screen
     pygame.display.flip()
