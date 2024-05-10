@@ -50,12 +50,44 @@ def play_sound_effect(path, file):
     channel = pygame.mixer.Channel(0)
     channel.play(sound, loops=0, maxtime=0)
 
-def show_finished_screen():
-    print("Finished screen showed")
+def show_finished_screen(mouse):
+    # print("Finished screen showed")
     screen.fill("blue")
     finished = create_text(f"Congratulation", "Green")
     screen.blit(finished, (600, 200))
+
+    button = Button("Play", "green", 400, 200)
+    button.collide(mouse)
+    button_group.add(button)
+
+    button2 = Button("Quit", "red", 600, 200)
+    button2.collide(mouse)
+    button_group.add(button2)
+
+    button_group.draw(screen)
+    screen.blit(button.text, (420, 200))
+    screen.blit(button2.text, (600, 200))
+
     pygame.display.flip()
+
+class Button(pygame.sprite.Sprite):
+    def __init__(self, text, color, x, y):
+        super().__init__()
+        self.image = pygame.Surface([90, 50])
+        self.image.fill("black")
+        self.rect = self.image.get_rect()
+        self.rect.x = x
+        self.rect.y = y
+        self.font = pygame.font.SysFont("Arial", 40)
+        self.text = self.font.render(text, False, color)
+        self.text_rect = self.image.get_rect()
+    
+    def collide(self, mouse):
+        mouse_pressed = pygame.mouse.get_pressed()
+        mouse_button_down = mouse_pressed[0]
+
+        if mouse_button_down and self.rect.collidepoint(mouse):
+            print("Clicked play button!")
 
 class Door(pygame.sprite.Sprite):
     def __init__(self, image, x, y):
@@ -257,6 +289,7 @@ block_group = pygame.sprite.Group()
 spike_group = pygame.sprite.Group()
 coin_group = pygame.sprite.Group()
 door_group = pygame.sprite.Group()
+button_group = pygame.sprite.Group()
 
 load_tiled_map("level1.tmx")
 
@@ -287,7 +320,7 @@ while running:
     screen.blit(coin_count, (0, 0))
 
     if player.completed_level:
-        show_finished_screen()
+        show_finished_screen(pygame.mouse.get_pos())
 
     # Crucial pygame thing helps with rendering our stuff on screen
     pygame.display.flip()
