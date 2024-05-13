@@ -40,8 +40,8 @@ def load_tiled_map(mapfile):
                     new_tile = Block(tile, x * tiled_map.tilewidth, y * tiled_map.tileheight)
                     foreground_group.add(new_tile)
 
-def create_text(text, color):
-    font = pygame.font.SysFont("Arial", 30)
+def create_text(text, size, color):
+    font = pygame.font.Font(os.path.join("assets/fonts/", "KnightWarrior-w16n8.otf"), size)
     new_text = font.render(text, True, (color))
     return new_text
 
@@ -53,15 +53,15 @@ def play_sound_effect(path, file):
 def show_finished_screen(mouse):
     # print("Finished screen showed")
     screen.fill("blue")
-    finished = create_text(f"Congratulation", "Green")
-    screen.blit(finished, (600, 200))
+    finished = create_text(f"Congratulation", 60, "Green")
+    screen.blit(finished, (500, 100))
 
-    button = Button("Play", "green", 400, 200)
-    button.collide(mouse)
+    button = Button("Play", "green", 420, 200)
+    button.collide(mouse, "Play")
     button_group.add(button)
 
-    button2 = Button("Quit", "red", 600, 200)
-    button2.collide(mouse)
+    button2 = Button("Quit", "red", 610, 200)
+    button2.collide(mouse, "Quit")
     button_group.add(button2)
 
     button_group.draw(screen)
@@ -69,6 +69,25 @@ def show_finished_screen(mouse):
     screen.blit(button2.text, (600, 200))
 
     pygame.display.flip()
+
+def menu_screen(mouse):
+    screen.fill("white")
+    screen.blit(background, (0, 0))
+
+    test = create_text("Platformer Game", 60, (50,191,255))
+    screen.blit(test, (400, 0))
+
+    button = Button("Play", "green", 540, 200)
+    button.collide(mouse, "Play")
+    button_group.add(button)
+
+    button_group.draw(screen)
+    screen.blit(button.text, (540, 200))
+
+    pygame.display.flip()
+
+def start_game_screen():
+    print("Why")
 
 class Button(pygame.sprite.Sprite):
     def __init__(self, text, color, x, y):
@@ -78,16 +97,20 @@ class Button(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.x = x
         self.rect.y = y
-        self.font = pygame.font.SysFont("Arial", 40)
+        self.font = pygame.font.Font(os.path.join("assets/fonts/", "KnightWarrior-w16n8.otf"), 40)
         self.text = self.font.render(text, False, color)
         self.text_rect = self.image.get_rect()
     
-    def collide(self, mouse):
+    def collide(self, mouse, status=""):
         mouse_pressed = pygame.mouse.get_pressed()
         mouse_button_down = mouse_pressed[0]
 
-        if mouse_button_down and self.rect.collidepoint(mouse):
+        if mouse_button_down and self.rect.collidepoint(mouse) and status == "Quit":
+            running = False
+            pygame.quit()
+        elif mouse_button_down and self.rect.collidepoint(mouse) and status == "Play":
             print("Clicked play button!")
+            player.game_status = "game"
 
 class Door(pygame.sprite.Sprite):
     def __init__(self, image, x, y):
@@ -144,6 +167,7 @@ class Player(pygame.sprite.Sprite):
         self.jump_count = 0
         self.coin_collected = 0
         self.completed_level = False
+        self.game_status = "menu"
     
     def update(self, group, group2, group3, group4):
         movement_x = 0
@@ -259,8 +283,8 @@ class Player(pygame.sprite.Sprite):
         # DOOR_COLLISION
         door_collision = pygame.sprite.spritecollide(self, group4, False)
         if door_collision:
-            if not self.completed_level:
-                self.completed_level = True
+            if not self.game_status == "completed":
+                self.game_status = "completed"
 
 # PyGame essentials setup
 pygame.init()
@@ -316,11 +340,19 @@ while running:
     door_group.draw(screen)
     player_group.draw(screen)
 
-    coin_count = create_text(f"Coin: {player.coin_collected}", "Gold")
+    coin_count = create_text(f"Coin: {player.coin_collected}", 40, "Gold")
     screen.blit(coin_count, (0, 0))
 
-    if player.completed_level:
-        show_finished_screen(pygame.mouse.get_pos())
+    # Update / Refresh GUI state aka show game menu or show level completed screen
+    mouse = pygame.mouse.get_pos()
+    # Show start screen aka screen with play button
+    if player.game_status == "menu":
+        menu_screen(mouse)
+    # Show that player is in game
+    elif player.game_status == "game":
+        print("Level loaded")
+    elif player.game_status == "completed":
+        show_finished_screen(mouse)
 
     # Crucial pygame thing helps with rendering our stuff on screen
     pygame.display.flip()
