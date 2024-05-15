@@ -81,13 +81,43 @@ def menu_screen(mouse):
     button.collide(mouse, "Play")
     button_group.add(button)
 
+    button2 = Button("Levels", "white", 540, 300)
+    button2.collide(mouse, "level-selector")
+    button_group.add(button)
+
     button_group.draw(screen)
     screen.blit(button.text, (540, 200))
+    screen.blit(button2.text, (540, 300))
 
     pygame.display.flip()
 
 def start_game_screen():
-    print("Why")
+    print("Level loaded")
+    # Render player and objects on screen
+    foreground_group.draw(screen)
+    block_group.draw(screen)
+    spike_group.draw(screen)
+    coin_group.draw(screen)
+    door_group.draw(screen)
+    player_group.draw(screen)
+
+def show_level_selector():
+    screen.fill("blue")
+
+    test = create_text("Level Selector", 60, (50,191,255))
+    screen.blit(test, (400, 0))
+
+    button = Button("01", "white", 540, 200)
+    button.collide(mouse, "Level 1")
+    button_group.add(button)
+
+    button2 = Button("02", "white", 740, 200)
+    button2.collide(mouse, "Level 2")
+    button_group.add(button)
+
+    button_group.draw(screen)
+    screen.blit(button.text, (540, 200))
+    screen.blit(button2.text, (740, 200))
 
 class Button(pygame.sprite.Sprite):
     def __init__(self, text, color, x, y):
@@ -111,6 +141,18 @@ class Button(pygame.sprite.Sprite):
         elif mouse_button_down and self.rect.collidepoint(mouse) and status == "Play":
             print("Clicked play button!")
             player.game_status = "game"
+        elif mouse_button_down and self.rect.collidepoint(mouse) and status == "level-selector":
+            print("Clicked level selector button!")
+            player.game_status = "level-selector"
+        if player.game_status == "level-selector":
+            if mouse_button_down and self.rect.collidepoint(mouse) and status == "Level 1":
+                print("Selected Level 1")
+                player.game_status = "game"
+                player.level_selected = "Level1"
+            elif mouse_button_down and self.rect.collidepoint(mouse) and status == "Level 2":
+                print("Selected Level 2")
+                player.game_status = "game"
+                player.level_selected = "Level2"
 
 class Door(pygame.sprite.Sprite):
     def __init__(self, image, x, y):
@@ -168,6 +210,7 @@ class Player(pygame.sprite.Sprite):
         self.coin_collected = 0
         self.completed_level = False
         self.game_status = "menu"
+        self.level_selected = ""
     
     def update(self, group, group2, group3, group4):
         movement_x = 0
@@ -323,6 +366,11 @@ while running:
         if event.type == pygame.QUIT:
             running = False
 
+    if player.game_status == "level-selector" and player.level_selected != "Level 1":
+        print("Select level!")
+    
+    print(player.level_selected)
+
     # Call the function that handles all our player movement and logic
     player.update(block_group, spike_group, coin_group, door_group)
 
@@ -332,14 +380,7 @@ while running:
     # Show background replacing the screen color
     screen.blit(background, (0, 0))
 
-    # Render player and objects on screen
-    foreground_group.draw(screen)
-    block_group.draw(screen)
-    spike_group.draw(screen)
-    coin_group.draw(screen)
-    door_group.draw(screen)
-    player_group.draw(screen)
-
+    # Rendering stuff on screen
     coin_count = create_text(f"Coin: {player.coin_collected}", 40, "Gold")
     screen.blit(coin_count, (0, 0))
 
@@ -350,9 +391,11 @@ while running:
         menu_screen(mouse)
     # Show that player is in game
     elif player.game_status == "game":
-        print("Level loaded")
+        start_game_screen()
     elif player.game_status == "completed":
         show_finished_screen(mouse)
+    elif player.game_status == "level-selector":
+        show_level_selector()
 
     # Crucial pygame thing helps with rendering our stuff on screen
     pygame.display.flip()
