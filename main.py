@@ -91,15 +91,20 @@ def menu_screen(mouse):
 
     pygame.display.flip()
 
-def start_game_screen():
-    print("Level loaded")
-    # Render player and objects on screen
+def draw_level_one():
+    # print("Level loaded")
     foreground_group.draw(screen)
     block_group.draw(screen)
     spike_group.draw(screen)
     coin_group.draw(screen)
     door_group.draw(screen)
     player_group.draw(screen)
+
+def draw_level_two():
+    foreground_group.draw(screen)
+    block_group.draw(screen)
+    player_group.draw(screen)
+    door_group.draw(screen)
 
 def show_level_selector():
     screen.fill("blue")
@@ -135,24 +140,35 @@ class Button(pygame.sprite.Sprite):
         mouse_pressed = pygame.mouse.get_pressed()
         mouse_button_down = mouse_pressed[0]
 
+        levels = [
+        "level1.tmx",
+        "level2.tmx"
+        ]
+
         if mouse_button_down and self.rect.collidepoint(mouse) and status == "Quit":
             running = False
             pygame.quit()
         elif mouse_button_down and self.rect.collidepoint(mouse) and status == "Play":
             print("Clicked play button!")
             player.game_status = "game"
+            load_tiled_map(levels[0])
+            player_group.draw(screen)
         elif mouse_button_down and self.rect.collidepoint(mouse) and status == "level-selector":
             print("Clicked level selector button!")
             player.game_status = "level-selector"
         if player.game_status == "level-selector":
             if mouse_button_down and self.rect.collidepoint(mouse) and status == "Level 1":
-                print("Selected Level 1")
+                # print("Selected Level 1")
                 player.game_status = "game"
                 player.level_selected = "Level1"
+                load_tiled_map(levels[0])
+                player_group.draw(screen)
             elif mouse_button_down and self.rect.collidepoint(mouse) and status == "Level 2":
-                print("Selected Level 2")
+                # print("Selected Level 2")
                 player.game_status = "game"
                 player.level_selected = "Level2"
+                load_tiled_map(levels[1])
+                player_group.draw(screen)
 
 class Door(pygame.sprite.Sprite):
     def __init__(self, image, x, y):
@@ -358,18 +374,21 @@ coin_group = pygame.sprite.Group()
 door_group = pygame.sprite.Group()
 button_group = pygame.sprite.Group()
 
-load_tiled_map("level1.tmx")
+# levels = [
+#     "level1.tmx",
+#     "level2.tmx"
+# ]
+
+# load_tiled_map("level1.tmx")
+# current_level_index = 0
+# load_tiled_map(levels[current_level_index])
+# current_level = "level1.tmx"
 
 # Main game loop
 while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
-
-    if player.game_status == "level-selector" and player.level_selected != "Level 1":
-        print("Select level!")
-    
-    print(player.level_selected)
 
     # Call the function that handles all our player movement and logic
     player.update(block_group, spike_group, coin_group, door_group)
@@ -390,12 +409,19 @@ while running:
     if player.game_status == "menu":
         menu_screen(mouse)
     # Show that player is in game
-    elif player.game_status == "game":
-        start_game_screen()
+    elif player.game_status == "game" and player.level_selected == "":
+        draw_level_one()
+        # player_group.draw(screen)
     elif player.game_status == "completed":
         show_finished_screen(mouse)
     elif player.game_status == "level-selector":
         show_level_selector()
+    elif player.game_status == "game" and player.level_selected == "Level1":
+        draw_level_one()
+    elif player.game_status == "game" and player.level_selected == "Level2":
+        draw_level_two()
+
+    print(player.level_selected)
 
     # Crucial pygame thing helps with rendering our stuff on screen
     pygame.display.flip()
