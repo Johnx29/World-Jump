@@ -3,7 +3,15 @@ import pygame
 import os
 from pytmx.util_pygame import load_pygame
 
+def empty_groups(array):
+    for index, item in enumerate(array):
+        # print(index, item)
+        item.empty()
+
 def load_tiled_map(mapfile):
+    # Maybe clear all collision groups before loading new level so I don't have to create the same collision groups
+    empty_groups([door_group, spike_group])
+
     tiled_map = load_pygame(mapfile)
 
     for layer in tiled_map.visible_layers:
@@ -41,14 +49,20 @@ def load_tiled_map(mapfile):
                     foreground_group.add(new_tile)
 
 def create_text(text, size, color):
-    font = pygame.font.Font(os.path.join("assets/fonts/", "KnightWarrior-w16n8.otf"), size)
+    font = pygame.font.Font(os.path.join("assets/fonts/", "LuckiestGuy-Regular.ttf"), size)
     new_text = font.render(text, True, (color))
     return new_text
 
-def play_sound_effect(path, file):
-    sound = pygame.mixer.Sound(os.path.join(path, file))
+def play_sound_effect(file):
+    sound = pygame.mixer.Sound(os.path.join("assets/audio/", file))
     channel = pygame.mixer.Channel(0)
     channel.play(sound, loops=0, maxtime=0)
+
+def play_music(file):
+    pygame.mixer.music.load(os.path.join("assets/music/", file))
+    pygame.mixer.music.set_volume(5)
+    pygame.mixer.music.play(loops=-1, start=0.0, fade_ms=0)
+    pygame.event.wait()
 
 def show_menu_screen(mouse):
     screen.fill("white")
@@ -72,17 +86,22 @@ def show_menu_screen(mouse):
     pygame.display.flip()
 
 def show_finished_screen(mouse):
+    # Refresh previous buttons to load new buttons
     button_group.empty()
+
+    # Refresh screen
     screen.fill("blue")
-    finished = create_text(f"Congratulation", 60, "Green")
-    screen.blit(finished, (500, 100))
+    
+    level_text = f"Completed: {player.level_selected}"
+    finished = create_text(level_text, 60, "white")
+    screen.blit(finished, (450, 100))
 
     button = Button(200, 50, "Next Level", "green", 400, 200)
     button.collide(mouse, "next-level")
     button_group.add(button)
 
-    button2 = Button(100, 50, "Quit", "red", 690, 200)
-    button2.collide(mouse, "Quit")
+    button2 = Button(100, 50, "Back", "red", 690, 200)
+    button2.collide(mouse, "Back")
     button_group.add(button2)
 
     button_group.draw(screen)
@@ -92,9 +111,16 @@ def show_finished_screen(mouse):
     pygame.display.flip()
 
 def draw_level_one():
+    # Refresh previous buttons to load new buttons
     button_group.empty()
+
+    screen.fill("white")
+    screen.blit(background, (0, 0))
+
     # Setup collision groups
     player_group = pygame.sprite.Group(player)
+    
+    # Call the function that handles all our player movement and logic
     player.update(block_group, spike_group, coin_group, door_group)
     
     foreground_group.draw(screen)
@@ -107,15 +133,34 @@ def draw_level_one():
     screen.blit(coin_count, (0, 0))
 
 def draw_level_two():
+    # Refresh previous buttons to load new buttons
+    # block_group.empty()
     button_group.empty()
+    # door_group.empty()
+    # spike_group.empty()
+
+    screen.fill("white")
+    screen.blit(background, (0, 0))
+
+    # Setup collision groups
+    player_group = pygame.sprite.Group(player)
+    block_group = pygame.sprite.Group()
+
+    # Call the function that handles all our player movement and logic
+    player.update(block_group, spike_group, coin_group, door_group)
+
     foreground_group.draw(screen)
     block_group.draw(screen)
     player_group.draw(screen)
     door_group.draw(screen)
 
 def show_level_selector():
-    screen.fill("blue")
+    # Refresh previous buttons to load new buttons
     button_group.empty()
+
+    # Refresh screen
+    screen.fill("white")
+    screen.blit(background, (0, 0))
 
     test = create_text("Level Selector", 60, (50,191,255))
     screen.blit(test, (400, 0))
@@ -142,8 +187,8 @@ class Button(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.x = x
         self.rect.y = y
-        self.font = pygame.font.Font(os.path.join("assets/fonts/", "KnightWarrior-w16n8.otf"), 40)
-        self.text = self.font.render(text, False, color)
+        self.font = pygame.font.Font(os.path.join("assets/fonts/", "LuckiestGuy-Regular.ttf"), 40)
+        self.text = self.font.render(text, True, color)
         self.text_rect = self.image.get_rect()
     
     def collide(self, mouse, status=""):
@@ -154,32 +199,31 @@ class Button(pygame.sprite.Sprite):
         "level1",
         "level2"
         ]
-        # print(f"Level: {levels[0]}.tmx")
 
-        if mouse_button_down and self.rect.collidepoint(mouse) and status == "Quit":
-            running = False
-            pygame.quit()
-        elif mouse_button_down and self.rect.collidepoint(mouse) and status == "Play":
+        current_level_index = 0
+
+        if mouse_button_down and self.rect.collidepoint(mouse) and status == "Play":
             print("Clicked play button!")
+            play_sound_effect("click.mp3")
+            pygame.mixer.music.unload()
+            play_music("music.mp3")
             player.game_status = "game"
-            load_tiled_map(f"{levels[0]}.tmx")
-        elif mouse_button_down and self.rect.collidepoint(mouse) and status == "next-level":
-            print("Clicked next level button")
-            load_tiled_map(f"{levels[1]}.tmx")
-            player.game_status = levels[1]
+            player.level_selected = f"{levels[current_level_index]}"
+            load_tiled_map(f"{levels[current_level_index]}.tmx")
         elif mouse_button_down and self.rect.collidepoint(mouse) and status == "level-selector":
             print("Clicked level selector button!")
+            play_sound_effect("click.mp3")
             player.game_status = "level-selector"
-        # if player.game_status == "level-selector":
-            # if mouse_button_down and self.rect.collidepoint(mouse):
-                # print("Selected:", status)
-                # load_tiled_map(f"{status}.tmx")
-            # if mouse_button_down and self.rect.collidepoint(mouse) and status == "game":
-                # print("Selected Level 1")
-                # player.game_status = "game"
-                # player.level_selected = "Level1"
-                # load_tiled_map(levels[0])
-                # player_group.draw(screen)
+        elif mouse_button_down and self.rect.collidepoint(mouse) and status == "next-level":
+            print("Clicked next level button")
+            player.game_status = ""
+            current_level_index += 1
+            load_tiled_map(f"{levels[current_level_index]}.tmx")
+            player.game_status = "game"
+            player.level_selected = f"{levels[current_level_index]}"
+        elif mouse_button_down and self.rect.collidepoint(mouse) and status == "Back":
+            button_group.empty()
+            player.game_status = "starting-screen"
 
 class Door(pygame.sprite.Sprite):
     def __init__(self, image, x, y):
@@ -214,7 +258,7 @@ class Block(pygame.sprite.Sprite):
         self.rect.y = y
 
 class Player(pygame.sprite.Sprite):
-    def __init__(self, x, y):
+    def __init__(self, x, y, current_level):
         super().__init__()
         self.images = []
         self.image = pygame.image.load(os.path.join("assets/player", "p1_stand.png")).convert_alpha()
@@ -236,8 +280,9 @@ class Player(pygame.sprite.Sprite):
         self.jump_count = 0
         self.coin_collected = 0
         self.completed_level = False
-        self.game_status = "starting-screen"
-        self.level_selected = ""
+        self.game_status = "game"
+        self.level_selected = current_level or ""
+        self.died = False
     
     def update(self, group, group2, group3, group4):
         movement_x = 0
@@ -267,6 +312,7 @@ class Player(pygame.sprite.Sprite):
         if keys[pygame.K_w] and self.jump_count < 1:
             self.velocity = -15
             self.jump_count = 1
+            play_sound_effect("jump.wav")
 
         # ADD GRAVITY
         self.velocity += 1
@@ -311,7 +357,13 @@ class Player(pygame.sprite.Sprite):
                 self.image = flipped
             elif self.moving_right == True:
                 self.image = pygame.image.load(os.path.join(player_animation_folder, self.images[self.animation_index])).convert_alpha()
-
+            # Show them jumping still even if they are currently moving
+            if self.jump_count > 0 and self.current_direction == "Right":
+                self.image = pygame.image.load(os.path.join(player_folder, "p1_jump.png")).convert_alpha()
+            elif self.jump_count > 0 and self.current_direction == "Left":
+                image = pygame.image.load(os.path.join(player_folder, "p1_jump.png")).convert_alpha()
+                flipped = pygame.transform.flip(image, True, False)
+                self.image = flipped
         # VERTICAL_COLLISION
         # Move player rect by y-axis a bit to ensure it is on vertical collision
         self.rect.y += movement_y
@@ -341,7 +393,9 @@ class Player(pygame.sprite.Sprite):
         spike_collision = pygame.sprite.spritecollide(self, group2, False)
         if spike_collision:
             print("Hit")
-            self.rect.x = 100
+            play_sound_effect("spiketrap.mp3")
+            # self.rect.x = 100
+            self.died = True
 
         # COIN_COLLISION
         # DO KILL ARGUMENT IN EFFECT (Makes our coins disappear on collided)
@@ -349,6 +403,7 @@ class Player(pygame.sprite.Sprite):
         if coin_collision:
             print("Coin Collected")
             self.coin_collected += 1
+            play_sound_effect("pickupCoin.wav")
 
         # DOOR_COLLISION
         door_collision = pygame.sprite.spritecollide(self, group4, False)
@@ -372,12 +427,13 @@ pygame.display.set_caption("Platformer Game")
 
 # Variable to store our background image
 background = pygame.image.load(os.path.join("assets/", "background.png")).convert_alpha()
+play_music("Intro Theme.mp3")
 
 # Create objects like player
-player = Player(100, 300)
+starting_level = "level1"
+player = Player(100, 300, starting_level)
 
 # Setup collision groups
-player_group = pygame.sprite.Group()
 foreground_group = pygame.sprite.Group()
 block_group = pygame.sprite.Group()
 spike_group = pygame.sprite.Group()
@@ -386,15 +442,13 @@ door_group = pygame.sprite.Group()
 button_group = pygame.sprite.Group()
 
 # load_tiled_map("level1.tmx")
+player.game_status = "starting-screen"
 
 # Main game loop
 while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
-
-    # Call the function that handles all our player movement and logic
-    # player.update(block_group, spike_group, coin_group, door_group)
 
     # Refresh the screen
     screen.fill("white")
@@ -409,8 +463,10 @@ while running:
         show_menu_screen(mouse)
     # Player clicked play button instead of level button, start game
     elif player.game_status == "game":
-        print("Reached")
-        draw_level_one()
+        if player.level_selected == "level1":
+            draw_level_one()
+        elif player.level_selected == "level2":
+            draw_level_two()
     # Player completed game show completed screen
     elif player.game_status == "completed":
         show_finished_screen(mouse)
