@@ -3,9 +3,16 @@ import pygame
 import os
 from pytmx.util_pygame import load_pygame
 
+levels = [
+    "level1.tmx",
+    "level2.tmx"
+]
+
+player_group = pygame.sprite.Group()
+button_group = pygame.sprite.Group()
+
 def empty_groups(array):
     for index, item in enumerate(array):
-        # print(index, item)
         item.empty()
 
 def load_tiled_map(mapfile):
@@ -65,23 +72,25 @@ def play_music(file):
     pygame.event.wait()
 
 def show_menu_screen(mouse):
+    button_group.empty()
+
     screen.fill("white")
     screen.blit(background, (0, 0))
 
-    test = create_text("Platformer Game", 60, (50,191,255))
-    screen.blit(test, (400, 0))
+    title = create_text("Platformer Game", 60, (50,191,255))
 
-    button = Button(120, 50, "Play", "green", 520, 200)
+    button = Button(150, 50, "Play", "green", 520, 200)
     button.collide(mouse, "Play")
     button_group.add(button)
 
-    button2 = Button(120, 50, "Levels", "red", 520, 300)
+    button2 = Button(150, 50, "Levels", "red", 520, 300)
     button2.collide(mouse, "level-selector")
     button_group.add(button2)
 
     button_group.draw(screen)
-    screen.blit(button.text, (540, 200))
-    screen.blit(button2.text, (530, 300))
+    screen.blit(title, (340, 0))
+    screen.blit(button.text, (540, 210))
+    screen.blit(button2.text, (530, 310))
 
     pygame.display.flip()
 
@@ -117,11 +126,13 @@ def draw_level_one():
     screen.fill("white")
     screen.blit(background, (0, 0))
 
+    coin_count = create_text(f"Coin: {player.coin_collected}", 40, "Gold")
+
     # Setup collision groups
     player_group = pygame.sprite.Group(player)
     
     # Call the function that handles all our player movement and logic
-    player.update(block_group, spike_group, coin_group, door_group)
+    player.update(block_group, spike_group, coin_group, door_group)    
     
     foreground_group.draw(screen)
     block_group.draw(screen)
@@ -129,15 +140,11 @@ def draw_level_one():
     coin_group.draw(screen)
     door_group.draw(screen)
     player_group.draw(screen)
-    coin_count = create_text(f"Coin: {player.coin_collected}", 40, "Gold")
     screen.blit(coin_count, (0, 0))
 
 def draw_level_two():
     # Refresh previous buttons to load new buttons
-    # block_group.empty()
     button_group.empty()
-    # door_group.empty()
-    # spike_group.empty()
 
     screen.fill("white")
     screen.blit(background, (0, 0))
@@ -202,12 +209,13 @@ class Button(pygame.sprite.Sprite):
 
         current_level_index = 0
 
+        # These run once without repeating
         if mouse_button_down and self.rect.collidepoint(mouse) and status == "Play":
             print("Clicked play button!")
             play_sound_effect("click.mp3")
             pygame.mixer.music.unload()
             play_music("music.mp3")
-            player.game_status = "game"
+            player.game_status = "level1"
             player.level_selected = f"{levels[current_level_index]}"
             load_tiled_map(f"{levels[current_level_index]}.tmx")
         elif mouse_button_down and self.rect.collidepoint(mouse) and status == "level-selector":
@@ -431,7 +439,7 @@ play_music("Intro Theme.mp3")
 
 # Create objects like player
 starting_level = "level1"
-player = Player(100, 300, starting_level)
+player = Player(200, 300, starting_level)
 
 # Setup collision groups
 foreground_group = pygame.sprite.Group()
@@ -450,35 +458,31 @@ while running:
         if event.type == pygame.QUIT:
             running = False
 
-    # Refresh the screen
-    screen.fill("white")
-
-    # Show background replacing the screen color
-    screen.blit(background, (0, 0))
-
     # Update / Refresh GUI state aka show game menu or show level completed screen
     mouse = pygame.mouse.get_pos()
+
     # Show start screen aka screen with play button
     if player.game_status == "starting-screen":
         show_menu_screen(mouse)
     # Player clicked play button instead of level button, start game
-    elif player.game_status == "game":
-        if player.level_selected == "level1":
+    elif player.level_selected == "level1":
+        if player.game_status == "completed":
+            show_finished_screen(mouse)
+        else:
             draw_level_one()
-        elif player.level_selected == "level2":
+    elif player.level_selected == "level2":
+        if player.game_status == "completed":
+            show_finished_screen(mouse)
+        else:
             draw_level_two()
     # Player completed game show completed screen
     elif player.game_status == "completed":
         show_finished_screen(mouse)
-        # if player.level_selected
+    # Player clicked level button to select levels
     elif player.game_status == "level-selector":
         show_level_selector()
-    # elif player.game_status == "game" and player.level_selected == "Level1":
-    #     draw_level_one()
-    # elif player.game_status == "game" and player.level_selected == "Level2":
-    #     draw_level_two()
 
-    print("Game: ", player.game_status)
+    print("Currently On: ", player.game_status)
     print("Level: ", player.level_selected)
 
     # Crucial pygame thing helps with rendering our stuff on screen
