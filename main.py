@@ -42,7 +42,7 @@ door_group = pygame.sprite.Group()
 button_group = pygame.sprite.Group()
 player_group = pygame.sprite.Group()
 
-# WE NEED THIS BECAUSE CLASSES CAN'T INTERACT WITH LOCAL VARIABLES BUT WITH CLASS LIKE THIS THEY CAN
+# WE NEED THIS BECAUSE OTHER CLASSES CAN'T INTERACT WITH LOCAL VARIABLES BUT WITH CLASSES LIKE THIS THEY CAN
 class Game:
     def __init__(self):
         self.game_status = "starting-screen"
@@ -65,25 +65,27 @@ class Button(pygame.sprite.Sprite):
         mouse_pressed = pygame.mouse.get_pressed()
         mouse_button_down = mouse_pressed[0]
 
-        levels = ["level1", "level2"]
-
-        levels_dict = {
-            0 : {
+        levels = {
+            1 : {
+                "map" : "level1",
                 "starting-x" : 142,
                 "starting-y" : 200
                 },
-            1 : {
-                "starting-x" : 200,
+
+            2 : {
+                "map" : "level2",
+                "starting-x" : 400,
                 "starting-y" : 100
                 }
         }
 
-        current_level_index = 0
+        current_level_index = 1
 
         # Button Hover Effect when mouse hovers over a button show it being interacted 
         if self.rect.collidepoint(mouse) and status == "Play":
             buttonObj.image.fill((100, 100, 100))
 
+        # Button Hover Effect when mouse hovers over a button in level selector menu show it being interacted 
         elif self.rect.collidepoint(mouse) and status == "level-selector":
             buttonObj.image.fill((100, 100, 100))
         elif self.rect.collidepoint(mouse) and status == "Level1":
@@ -91,13 +93,13 @@ class Button(pygame.sprite.Sprite):
         elif self.rect.collidepoint(mouse) and status == "Level2":
             buttonObj.image.fill((100, 100, 100))
 
+        # Button Hover Effect when mouse hovers over a button in completed menu show it being interacted 
         elif self.rect.collidepoint(mouse) and status == "next-level":
             buttonObj.image.fill((100, 100, 100))
         elif self.rect.collidepoint(mouse) and status == "back":
             buttonObj.image.fill((200, 200, 200))
 
-        # These run once without repeating
-
+        # These run once without repeating in the game loop
         # Player clicked play button
         if mouse_button_down and self.rect.collidepoint(mouse) and status == "Play":            
             # Empty collision groups for loading next level
@@ -106,16 +108,20 @@ class Button(pygame.sprite.Sprite):
             button_group.empty()
             key_group.empty()
             spike_group.empty()
-
-            player.respawn(100, 200)
             
             # Play button click sound and stop current music and load new music
             play_sound_effect(button_click_sound)
             pygame.mixer.music.unload()
             play_music(game_music)
 
-            game.game_status = "level1"
-            level_selected = f"{levels[current_level_index]}"
+            # Spawn the player at starting pos
+            player_spawn_x = levels[current_level_index]["starting-x"]
+            player_spawn_y = levels[current_level_index]["starting-y"]
+            player.respawn(player_spawn_x, player_spawn_y)
+
+            # Handle loading and tell main loop to start game
+            game.game_status = "game"
+            level_selected = f"{levels[current_level_index]["map"]}"
             game.level_selected = level_selected
             load_tiled_map(f"{level_selected}.tmx")
 
@@ -133,19 +139,23 @@ class Button(pygame.sprite.Sprite):
             key_group.empty()
             spike_group.empty()
 
-            player_x_pos = levels_dict[current_level_index]["starting-x"]
-            player_y_pos = levels_dict[current_level_index]["starting-y"]
-            player.respawn(player_x_pos, player_y_pos)
-
             # Play button click sound and stop current music and load new music
             play_sound_effect(button_click_sound)
             pygame.mixer.music.unload()
             play_music(game_music)
 
-            game.game_status = ""
+            # Increment level to show we want next level loaded
             current_level_index += 1
+
+            # Spawn the player at starting pos
+            player_spawn_x = levels[current_level_index]["starting-x"]
+            player_spawn_y = levels[current_level_index]["starting-y"]
+            print(player_spawn_x, player_spawn_y)
+            player.respawn(player_spawn_x, player_spawn_y)
+
+            # Handle loading and tell main loop to start game
             game.game_status = "game"
-            level_selected = f"{levels[current_level_index]}"
+            level_selected = f"{levels[current_level_index]["map"]}"
             game.level_selected = level_selected
             load_tiled_map(f"{level_selected}.tmx")
 
@@ -537,6 +547,7 @@ while running:
     elif game.game_status == "completed":
         show_finished_screen(mouse)
 
+    # Figure out a way to cut down on this level1-level2 chain make it only follow the current index of level
     elif game.level_selected == "level1":
         draw_level_one()
         if player.has_key:
