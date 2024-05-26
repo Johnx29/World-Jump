@@ -1,6 +1,6 @@
 # Platformer-Game-PyGame
-This game was created for my capstone project assignment which I decided on creating a platformer game using the PyGame library.
+This game was created for my ICS4U capstone project assignment and I decided to make a platformer game using the Pygame library.
 ## Goals
-I hope to finish the basic mechanics of the platformer game and include interesting features that make this game more distinctive then other platformer games.
+The goal is to finish the player movement and have a screen show Play to start the game.
 ## Technology Used
-The technology I used was python with the pygame library which has all the code needed to setup a basic game which allows me to develop the game without worrying about specific game engine features to add.
+The technology and libraries used include Pygame, os library, PyTMX, and Tiled
