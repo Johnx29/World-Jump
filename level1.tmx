@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <map version="1.10" tiledversion="1.10.2" orientation="orthogonal" renderorder="right-down" width="18" height="10" tilewidth="70" tileheight="70" infinite="0" nextlayerid="10" nextobjectid="1">
- <tileset firstgid="1" name="platformer assets" tilewidth="70" tileheight="70" tilecount="8" columns="0">
+ <tileset firstgid="1" name="platformer assets" tilewidth="70" tileheight="70" tilecount="6" columns="0">
   <grid orientation="orthogonal" width="1" height="1"/>
   <tile id="1">
    <image width="70" height="70" source="assets/tiles/door_closedMid.png"/>
@@ -14,14 +14,8 @@
   <tile id="6">
    <image width="70" height="70" source="assets/tiles/grassCenter.png"/>
   </tile>
-  <tile id="7">
-   <image width="70" height="70" source="assets/tiles/boxCoinAlt.png"/>
-  </tile>
   <tile id="8">
    <image width="70" height="70" source="assets/tiles/spikes.png"/>
-  </tile>
-  <tile id="9">
-   <image width="70" height="70" source="assets/items/coinGold.png"/>
   </tile>
   <tile id="10">
    <image width="70" height="70" source="assets/items/keyYellow.png"/>
@@ -38,7 +32,7 @@
 0,6,0,0,0,0,0,0,0,6,0,0,0,0,0,0,0,0,
 0,6,6,0,0,0,0,6,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,6,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6
 </data>
  </layer>
  <layer id="8" name="Spike" width="18" height="10">
@@ -51,8 +45,8 @@
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9
+0,0,0,9,9,0,9,0,9,0,9,0,9,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 </data>
  </layer>
  <layer id="5" name="Wall" width="18" height="10">
