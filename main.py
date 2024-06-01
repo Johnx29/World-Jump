@@ -49,6 +49,7 @@ class Game:
         self.game_status = "starting-screen"
         self.level_selected = ""
         self.current_level_index = 1
+        self.keys = []
 
 class Button(pygame.sprite.Sprite):
     def __init__(self, width, height, text, color, x, y):
@@ -84,6 +85,11 @@ class Button(pygame.sprite.Sprite):
                 "map" : "level3",
                 "starting-x" : 100,
                 "starting-y" : 100
+                },
+            4 : {
+                "map" : "level4",
+                "starting-x" : 100,
+                "starting-y" : 100
                 }
         }
 
@@ -102,6 +108,7 @@ class Button(pygame.sprite.Sprite):
             button_group.empty()
             key_group.empty()
             spike_group.empty()
+            game.keys.clear()
             
             # Play button click sound and stop current music and load new music
             play_sound_effect(button_click_sound)
@@ -134,6 +141,7 @@ class Button(pygame.sprite.Sprite):
             button_group.empty()
             key_group.empty()
             spike_group.empty()
+            game.keys.clear()
             
             # Play button click sound and stop current music and load new music
             play_sound_effect(button_click_sound)
@@ -162,6 +170,7 @@ class Button(pygame.sprite.Sprite):
             button_group.empty()
             key_group.empty()
             spike_group.empty()
+            game.keys.clear()
 
             # Play button click sound and stop current music and load new music
             play_sound_effect(button_click_sound)
@@ -268,6 +277,7 @@ class Player(pygame.sprite.Sprite):
         self.has_key = False
         self.died = False
         self.completed_level = False
+        key_group.add(game.keys)
     
     def update(self):
         movement_x = 0
@@ -435,7 +445,8 @@ def load_tiled_map(mapfile):
                 tile = tiled_map.get_tile_image_by_gid(gid)
                 if tile:
                     new_key = Key(tile, x * tiled_map.tilewidth, y * tiled_map.tileheight)
-                    key_group.add(new_key)
+                    game.keys.append(new_key)
+                    key_group.add(game.keys)
 
 def play_sound_effect(file):
     sound = pygame.mixer.Sound(os.path.join("assets/audio/", file))
@@ -485,7 +496,7 @@ def show_finished_screen(mouse):
     next_button = Button(100, 50, "Next", "green", 400, 200)
     next_button.rect.center = (500, 200)
     
-    if game.current_level_index != 3:
+    if game.current_level_index != 4:
         next_button.collide(next_button, mouse, "next-level")
         button_group.add(next_button)
 
@@ -497,7 +508,7 @@ def show_finished_screen(mouse):
     button_group.draw(screen)
     screen.blit(finished, (finished_rect))
 
-    if game.current_level_index != 3:
+    if game.current_level_index != 4:
         screen.blit(next_button.text, (next_button.rect.x+2, next_button.rect.y+10))
     
     screen.blit(back_button.text, (back_button.rect.x+2, back_button.rect.y+10))
@@ -546,12 +557,18 @@ def show_level_selector():
     level3_button.collide(level3_button, mouse, 3, True)
     button_group.add(level3_button)
 
+    level4_button = Button(100, 50, "04", "white", 700, 200)
+    level4_button.rect.center = (800, 300)
+    level4_button.collide(level4_button, mouse, 4, True)
+    button_group.add(level4_button)
+
     button_group.draw(screen)
     screen.blit(title, (title_rect))
     screen.blit(level1_button.text, (level1_button.rect.x+20, level1_button.rect.y+10))
     screen.blit(level2_button.text, (level2_button.rect.x+20, level2_button.rect.y+10))
     screen.blit(level3_button.text, (level3_button.rect.x+20, level3_button.rect.y+10))
-    screen.blit(back_button.text, (back_button.rect.x, back_button.rect.y+10))
+    screen.blit(level4_button.text, (level4_button.rect.x+20, level4_button.rect.y+10))
+    screen.blit(back_button.text, (back_button.rect.x+3, back_button.rect.y+10))
 
 # Create the basics
 
@@ -581,8 +598,8 @@ while running:
     elif game.game_status == "completed":
         show_finished_screen(mouse)
 
-    # Figure out a way to cut down on this level1-level2 chain make it only follow the current index of level
-    elif game.level_selected == "level1" or game.level_selected == "level2" or game.level_selected == "level3":
+    # Without this I can't render the map and show if the player even has a key
+    elif game.level_selected == f"level{game.current_level_index}":
         draw_level()
         if player.has_key:
             key = pygame.image.load(os.path.join("assets/hud", "hud_keyYellow.png")).convert_alpha()
